@@ -1,0 +1,2776 @@
+0001   0000             #include "defs.inc"
+0001+  0000             #define ORG .org
+0002+  0000             #define EQU .equ
+0003+  0000             #define DB  .db
+0004+  0000             #define DW  .dw
+0005+  0000             
+0006+  0000             #define SDOS_VER "SDOS_V8.9N"
+0007+  0000             
+0008+  0000             #define SD_DBG_PRINT0
+0009+  0000             #define SD_DBG_PRINT1
+0010+  0000             #define SD_DBG_PRINT2
+0011+  0000             
+0012+  0000             ;#define SD_msx
+0013+  0000             #define SD_HWM_PVV
+0014+  0000             ;#define RK86_WW55_SD_HWM_PVV
+0015+  0000             ;#define STD_WW55_SD_n8vem    ; Specialist
+0016+  0000             ;#define RK86_WW55_SD_n8vem    ; APOGEE and RK86 memmap
+0017+  0000             ;#define UT88_WW55_SD_n8vem    ; ports IN - OUT
+0018+  0000             ;#define GAL_AY_SD_n8vem
+0019+  0000             ;#define SD_n8vem
+0020+  0000             ;#define FAT12_ON
+0021+  0000             #define FAT16_ON
+0022+  0000             ;#define RWR
+0023+  0000             ;#define UT88
+0024+  0000             ;#define APOGEE
+0025+  0000             ;#define RK86
+0026+  0000             #define STD
+0027+  0000             ;#define MX2
+0028+  0000             ;#define GAL
+0029+  0000             ;#define ORION
+0030+  0000             ;#define TRS80
+0031+  0000             
+0032+  0000             ;==========================================================
+0033+  0000~            #ifdef TRS80  ; TRS-80 and clones - SD
+0034+  0000~            GETC  EQU 00384H ;
+0035+  0000~            ;PUTC  EQU 033AH ; input in A :(, but not in C
+0036+  0000~            #ifdef SD_HWM_PVV
+0037+  0000~            SD_DATA_PORT EQU 03bfeh ;0C800H
+0038+  0000~            SD_CONF_PORT EQU SD_DATA_PORT+1
+0039+  0000~            #endif
+0040+  0000~            START_ADDR   EQU 0f000h ;03000h
+0041+  0000~            BUF     EQU 0e800h ;0c000h
+0042+  0000             #endif
+0043+  0000             ;==========================================================
+0044+  0000             
+0045+  0000~            #ifdef GAL  ; Galaxy - SD
+0046+  0000~            gGETC  EQU 00cf5H ;
+0047+  0000~            gPUTC  EQU 00020H
+0048+  0000~            gPRINT EQU 00937H
+0049+  0000~            #ifdef SD_n8vem
+0050+  0000~            SD_DATA_PORT EQU 0C800H
+0051+  0000~            #endif
+0052+  0000~            #ifdef SD_msx
+0053+  0000~            SD_DATA_PORT EQU 0C801H
+0054+  0000~            SD_CONF_PORT EQU SD_DATA_PORT-1
+0055+  0000~            #endif
+0056+  0000~            #ifdef SD_HWM_PVV
+0057+  0000~            SD_DATA_PORT EQU 0C800H
+0058+  0000~            SD_CONF_PORT EQU SD_DATA_PORT+1
+0059+  0000~            #endif
+0060+  0000~            START_ADDR   EQU 07000h ;0F000h
+0061+  0000~            BUF     EQU 0c000h
+0062+  0000             #endif
+0063+  0000             ;==========================================================
+0064+  0000             
+0065+  0000~            #ifdef MX2  ; MX - SD_MX2
+0066+  0000~            GETC  EQU 0f803H
+0067+  0000~            PUTC  EQU 0f809H
+0068+  0000~            PRINT EQU 0f818H
+0069+  0000~            PRHEX EQU 0f815H
+0070+  0000~            IfKeyPress EQU 0F81BH
+0071+  0000~            SD_DATA_PORT EQU 0fff0H ;U4
+0072+  0000~            SD_CONF_PORT EQU SD_DATA_PORT+1 
+0073+  0000~            START_ADDR   EQU 0D400H ;08000H
+0074+  0000~            BUF     EQU 0E000H ;08800H
+0075+  0000             #endif
+0076+  0000             ;==========================================================
+0077+  0000             
+0078+  0000             #ifdef STD  ; STD - SD_MX2
+0079+  0000             GETC  EQU 0C803H
+0080+  0000             PUTC  EQU 0C809H
+0081+  0000             PRINT EQU 0C818H
+0082+  0000             PRHEX EQU 0C815H
+0083+  0000             IfKeyPress EQU 0C81BH
+0084+  0000~            #ifdef SD_msx
+0085+  0000~            SD_DATA_PORT EQU 0f701H
+0086+  0000~            SD_CONF_PORT EQU SD_DATA_PORT-1
+0087+  0000             #endif
+0088+  0000             #ifdef SD_HWM_PVV
+0089+  0000             SD_DATA_PORT EQU 0F000H ;0f700H
+0090+  0000             SD_CONF_PORT EQU SD_DATA_PORT+1
+0091+  0000             #endif
+0092+  0000~            #ifdef STD_WW55_SD_n8vem
+0093+  0000~            SD_DATA_PORT_WW55 EQU 0F000h
+0094+  0000             #endif
+0095+  0000             START_ADDR   EQU 0D000H
+0096+  0000             ;BUF     EQU 0E000h	; ВИ53 addr
+0097+  0000             ;BUF     EQU 0D800h
+0098+  0000             BUF     EQU 0D900h	; + 100h for sdos binary more than 2048 bytes, now 2304 bytes possible
+0099+  0000             #endif
+0100+  0000             ;==========================================================
+0101+  0000             
+0102+  0000~            #ifdef RK86
+0103+  0000~            GETC  EQU 0F803H
+0104+  0000~            PUTC  EQU 0F809H
+0105+  0000~            PRINT EQU 0F818H
+0106+  0000~            PRHEX EQU 0F815H
+0107+  0000~            IfKeyPress EQU 0F81BH
+0108+  0000~            SD_DATA_PORT EQU 0d000H
+0109+  0000~            SD_CONF_PORT EQU SD_DATA_PORT+1
+0110+  0000~            SD_DATA_PORT_WW55 EQU 0a000H
+0111+  0000~            #define SD_ROM
+0112+  0000~            #ifdef SD_ROM
+0113+  0000~            START_ADDR   EQU 06000H
+0114+  0000~            #else
+0115+  0000~            START_ADDR   EQU 0f000H
+0116+  0000~            #endif
+0117+  0000~            BUF     EQU 06900h
+0118+  0000             #endif
+0119+  0000             ;==========================================================
+0120+  0000             
+0121+  0000~            #ifdef APOGEE
+0122+  0000~            GETC  EQU 0F803H
+0123+  0000~            PUTC  EQU 0F809H
+0124+  0000~            PRINT EQU 0F818H
+0125+  0000~            PRHEX EQU 0F815H
+0126+  0000~            IfKeyPress EQU 0F81BH
+0127+  0000~            SD_DATA_PORT_WW55 EQU 0ee00h
+0128+  0000~            START_ADDR   EQU 0d000H
+0129+  0000~            BUF     EQU 0d900h
+0130+  0000             #endif
+0131+  0000             ;==========================================================
+0132+  0000             
+0133+  0000~            #ifdef UT88
+0134+  0000~            GETC  EQU 0F803H
+0135+  0000~            PUTC  EQU 0F809H
+0136+  0000~            PRINT EQU 0F818H
+0137+  0000~            PRHEX EQU 0F815H
+0138+  0000~            IfKeyPress EQU 0F81BH
+0139+  0000~            SD_DATA_PORT_WW55 EQU 0F8H
+0140+  0000~            START_ADDR   EQU 0d000H
+0141+  0000~            BUF     EQU 0d900h
+0142+  0000             #endif
+0143+  0000             ;==========================================================
+0144+  0000             
+0145+  0000~            #ifdef ORION
+0146+  0000~            GETC  EQU 0F803H
+0147+  0000~            PUTC  EQU 0F809H
+0148+  0000~            PRINT EQU 0F818H
+0149+  0000~            PRHEX EQU 0F815H
+0150+  0000~            IfKeyPress EQU 0F81BH
+0151+  0000~            #ifdef SD_n8vem
+0152+  0000~            SD_DATA_PORT EQU 0f762H
+0153+  0000~            #endif
+0154+  0000~            #ifdef SD_msx
+0155+  0000~            SD_DATA_PORT EQU 0f763H
+0156+  0000~            SD_CONF_PORT EQU SD_DATA_PORT-1
+0157+  0000~            #endif
+0158+  0000~            #ifdef SD_HWM_PVV
+0159+  0000~            SD_DATA_PORT EQU 0f762H
+0160+  0000~            SD_CONF_PORT EQU SD_DATA_PORT+1
+0161+  0000~            #endif
+0162+  0000~            ;START_ADDR   EQU 09600H ;RKO
+0163+  0000~            ;BUF     EQU 0a100h
+0164+  0000~            START_ADDR   EQU 0a680H ;ORI
+0165+  0000~            BUF     EQU 0b100h
+0166+  0000             #endif
+0167+  0000             ;==========================================================
+0168+  0000             
+0169+  0000             BUFDIR  EQU BUF+0200h
+0170+  0000             CWD     EQU BUF+0400H
+0171+  0000             FATSEC  EQU BUF+0500H
+0172+  0000             
+0173+  0000             ROOTSEC EQU FATSEC+4
+0174+  0000             DATASEC EQU ROOTSEC+4
+0175+  0000             ROOTLEN EQU DATASEC+4
+0176+  0000             ROOTLNS EQU ROOTLEN+2
+0177+  0000             SECINBL EQU ROOTLNS+2
+0178+  0000             FAT_NXT EQU SECINBL+1
+0179+  0000             BUFSEC  EQU FAT_NXT+3
+0180+  0000             BLKLEN  EQU BUFSEC+4
+0181+  0000             BLKSEC  EQU BLKLEN+1
+0182+  0000             BNEXT   EQU BLKSEC+4
+0183+  0000             FBPOS   EQU BNEXT+4
+0184+  0000             FBLEN   EQU FBPOS+2
+0185+  0000             DIRREC  EQU FBLEN+2
+0186+  0000             CWDBLK  EQU DIRREC+1
+0187+  0000             LINEBUF EQU CWDBLK+4
+0188+  0000             SDTYPE  EQU LINEBUF+38h
+0002   D000               ORG START_ADDR
+0003   D000             ; 0xCB7F  => BC=crc
+0004   D000             
+0005   D000             ;CALL FS_FNDF ; DE - name of file for finding, out HL - string FAT record of file
+0006   D000             ;CALL F_OPEN ; DE - name of file for opening, out C==1 if file not founded
+0007   D000             ;CALL F_READ ; HL - addr for store readed data, BC - size of readed data
+0008   D000             ;#ifdef GAL
+0009   D000             ;  ORG START_ADDR-10
+0010   D000             ;  DB 0,0,0,0,0
+0011   D000             ;  DB 0A5h
+0012   D000             ;  DB 00,70h,0ffh,7fh
+0013   D000             ;#endif
+0014   D000             
+0015   D000~            #ifdef RK86
+0016   D000~            #ifdef SD_ROM
+0017   D000~            #else
+0018   D000~              jmp 0f800H
+0019   D000~              nop
+0020   D000~            #endif
+0021   D000             #endif
+0022   D000             
+0023   D000             ENTRY:
+0024   D000~            #ifdef TRS80
+0025   D000~              call 001c9H  ; полное стирание экрана
+0026   D000~              mvi a,20h
+0027   D000~              STA 4022h
+0028   D000             #endif
+0029   D000~            #ifdef MX2
+0030   D000~              call 0c84eH  ; полное стирание экрана
+0031   D000             #endif
+0032   D000~            #ifdef ORION
+0033   D000~              mvi A,01fh
+0034   D000~              call 0f80fh ;clear screen
+0035   D000             #endif
+0036   D000             ;#ifdef STD
+0037   D000             ;  ORG START_ADDR-4
+0038   D000             ;  DB 00,0d0h,0d0h,0d8h
+0039   D000             ;  LXI SP,0F6CFH
+0040   D000             ;#endif
+0041   D000             ;=============================================
+0042   D000             #ifdef SD_DBG_PRINT0
+0043   D000 21 7E D0      LXI H,TSD_INIT
+0044   D003 CD 18 C8      CALL PRINT
+0045   D006             #endif
+0046   D006             ;=============================================
+0047   D006 21 00 D9      lxi h,BUF
+0048   D009 01 00 07      lxi b,2048-256
+0049   D00C             clrmem:
+0050   D00C 36 00         mvi m,0
+0051   D00E 23            inx h
+0052   D00F 0B            dcx b
+0053   D010 79            mov a,c
+0054   D011 B0            ora b
+0055   D012 C2 0C D0      jnz clrmem
+0056   D015 CD 37 D5      CALL FS_RST
+0057   D018             LOOP: 
+0058   D018 0E 38         MVI C,38H
+0059   D01A 21 2A DE      LXI H,LINEBUF
+0060   D01D             LOOP0:
+0061   D01D 36 00         mvi m,0
+0062   D01F 23            inx h
+0063   D020 0D            DCR C
+0064   D021 C2 1D D0      JNZ LOOP0
+0065   D024 21 FB D1      LXI H,A_DRIVE
+0066   D027 CD 18 C8      CALL PRINT
+0067   D02A 21 00 DD      LXI H,CWD
+0068   D02D CD 18 C8      CALL PRINT
+0069   D030 0E 3E         MVI C,'>'
+0070   D032 CD 09 C8      CALL PUTC
+0071   D035 CD A7 D1      CALL READLN
+0072   D038 21 18 D0      LXI H,LOOP
+0073   D03B E5            PUSH H
+0074   D03C 21 1F D2      LXI H,CMDLST
+0075   D03F 7E          LOOP1:  MOV A,M
+0076   D040 B7            ORA A
+0077   D041 CA 2C D1      JZ RUNFILE
+0078   D044 11 2A DE      LXI D,LINEBUF
+0079   D047 7E          LOOP2:  MOV A,M
+0080   D048 B7            ORA A
+0081   D049 CA 56 D0      JZ LOOP3
+0082   D04C 1A            LDAX D
+0083   D04D BE            CMP M
+0084   D04E C2 60 D0      JNZ LOOP4
+0085   D051 13            INX D
+0086   D052 23            INX H
+0087   D053 C3 47 D0      JMP LOOP2
+0088   D056 1A          LOOP3:  LDAX D
+0089   D057 B7            ORA A
+0090   D058 CA 6B D0      JZ LOOP5
+0091   D05B FE 20         CPI 20H
+0092   D05D CA 6B D0      JZ LOOP5
+0093   D060 7E          LOOP4:  MOV A,M
+0094   D061 23            INX H
+0095   D062 B7            ORA A
+0096   D063 C2 60 D0      JNZ LOOP4
+0097   D066 23            INX H
+0098   D067 23            INX H
+0099   D068 C3 3F D0      JMP LOOP1
+0100   D06B 23          LOOP5:  INX H
+0101   D06C 5E            MOV E,M
+0102   D06D 23            INX H
+0103   D06E 56            MOV D,M
+0104   D06F~            #ifdef GAL
+0105   D06F~              call 02edH
+0106   D06F             #else
+0107   D06F CD F1 D1      CALL PRINT_NEWLINE
+0108   D072             #endif
+0109   D072 EB            XCHG
+0110   D073 E9            PCHL
+0111   D074             
+0112   D074 4E          PRINTN: MOV C,M
+0113   D075 23            INX H
+0114   D076 CD 09 C8      CALL PUTC
+0115   D079 05            DCR B
+0116   D07A C2 74 D0      JNZ PRINTN
+0117   D07D C9            RET
+0118   D07E             
+0119   D07E             #ifdef SD_DBG_PRINT0
+0120   D07E 53 44 4F 53 TSD_INIT: DB SDOS_VER,0dh,0ah,0
+0120   D082 5F 56 38 2E 
+0120   D086 39 4E 0D 0A 
+0120   D08A 00 
+0121   D08B             #endif
+0122   D08B             
+0123   D08B             C_DIR:
+0124   D08B 11 2C DE      LXI D,LINEBUF+2
+0125   D08E 13            INX D
+0126   D08F 1A            LDAX D
+0127   D090 FE 20         CPI 20H
+0128   D092 CA 8E D0      JZ $-4
+0129   D095 B7            ORA A
+0130   D096 C2 9C D0      JNZ $+6
+0131   D099 11 14 D2      LXI D,ALLFILS
+0132   D09C CD 76 D6      CALL FS_FNDF
+0133   D09F DA F1 D0      JC C_DIRNO
+0134   D0A2 E5          C_DIR1: PUSH H
+0135   D0A3 CD 1B C8      CALL IfKeyPress ; опрос нажатия кнопок 
+0136   D0A6 FE FF         CPI 0FFH    ; приостановка вывода списка файлов если есть нажатие любой кнопки
+0137   D0A8 C2 A3 D0      JNZ $-5
+0138   D0AB 01 0B 00      LXI B,11
+0139   D0AE 09            DAD B
+0140   D0AF 7E            MOV A,M
+0141   D0B0 E1            POP H
+0142   D0B1 E6 08         ANI 8
+0143   D0B3 C2 E9 D0      JNZ C_DIR2
+0144   D0B6 06 08         MVI B,8
+0145   D0B8 CD 74 D0      CALL PRINTN
+0146   D0BB 0E 20         MVI C,' '
+0147   D0BD CD 09 C8      CALL PUTC
+0148   D0C0 06 03         MVI B,3
+0149   D0C2 CD 74 D0      CALL PRINTN
+0150   D0C5 0E 20         MVI C,' '
+0151   D0C7 CD 09 C8      CALL PUTC
+0152   D0CA 7E            mov A,M
+0153   D0CB E6 10         ani 010H
+0154   D0CD CA D9 D0      jz C_DIR11
+0155   D0D0 21 1F D2      LXI H,NODIR+4 ;_DIR
+0156   D0D3 CD 18 C8      CALL PRINT
+0157   D0D6 C3 E6 D0      jmp C_DIR12
+0158   D0D9             C_DIR11:
+0159   D0D9 7D            mov A,L
+0160   D0DA C6 12         adi 012H
+0161   D0DC 6F            mov L,A
+0162   D0DD 7E            mov A,M
+0163   D0DE CD 15 C8      call PRHEX
+0164   D0E1 2B            dcx H
+0165   D0E2 7E            mov A,M
+0166   D0E3 CD 15 C8      call PRHEX
+0167   D0E6             C_DIR12:
+0168   D0E6 CD F1 D1      CALL PRINT_NEWLINE
+0169   D0E9 CD A2 D6    C_DIR2: CALL FS_FNDN
+0170   D0EC D2 A2 D0      JNC C_DIR1
+0171   D0EF C9            RET
+0172   D0F0             C_DIRNO_POPH:
+0173   D0F0 E1            pop H
+0174   D0F1 21 00 D2    C_DIRNO:LXI H,NOFILES
+0175   D0F4 C3 18 C8      JMP PRINT
+0176   D0F7             
+0177   D0F7 21 2B DE    C_CD: LXI H,LINEBUF+1
+0178   D0FA 23            INX H
+0179   D0FB 7E            MOV A,M
+0180   D0FC FE 20         CPI 20H
+0181   D0FE CA FA D0      JZ $-4
+0182   D101 B7            ORA A
+0183   D102 C2 0E D1      JNZ C_CD1
+0184   D105 CD F1 D1      CALL PRINT_NEWLINE
+0185   D108 21 00 DD      LXI H,CWD
+0186   D10B C3 18 C8      JMP PRINT
+0187   D10E EB          C_CD1:  XCHG
+0188   D10F CD D6 D6      CALL FS_CHDIR
+0189   D112 D0            RNC
+0190   D113 21 1B D2      LXI H,NODIR
+0191   D116 C3 18 C8      JMP PRINT
+0192   D119             
+0193   D119             C_I: 
+0194   D119 CD 38 D2      CALL SD_OFF
+0195   D11C E1            pop H
+0196   D11D C3 00 D0      JMP START_ADDR
+0197   D120             
+0198   D120             C_X: 
+0199   D120 CD 38 D2      CALL SD_OFF
+0200   D123~            #ifdef MX2
+0201   D123~              JMP 0F800H
+0202   D123             #endif
+0203   D123             #ifdef STD
+0204   D123 C3 00 C0      JMP 0C000H
+0205   D126             #endif
+0206   D126~            #ifdef APOGEE
+0207   D126~              JMP 0F800H
+0208   D126             #endif
+0209   D126~            #ifdef RK86
+0210   D126~              JMP 0F800H
+0211   D126             #endif
+0212   D126~            #ifdef UT88
+0213   D126~              JMP 0F800H
+0214   D126             #endif
+0215   D126~            #ifdef GAL
+0216   D126~              pop D ;garbage read
+0217   D126~              ret   ;return to promt
+0218   D126             #endif
+0219   D126~            #ifdef TRS80
+0220   D126~              pop D ;garbage read
+0221   D126~              LXI B,01a18H
+0222   D126~              jmp 019AEh
+0223   D126~            ;  ret   ;return to promt
+0224   D126             #endif
+0225   D126             
+0226   D126~            #ifdef ORION
+0227   D126~              JMP 0F800H
+0228   D126             #endif
+0229   D126             
+0230   D126~            #ifdef RWR ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0231   D126~            C_RWR: 
+0232   D126~              LXI D,LINEBUF+2
+0233   D126~              CALL F_OPEN
+0234   D126~              JC C_DIRNO ; no file
+0235   D126~              LXI H,LINEBUF+2
+0236   D126~            C_RWR1: 
+0237   D126~              MOV A,M
+0238   D126~              CPI 0
+0239   D126~              JZ C_RWR2
+0240   D126~              CPI 2CH
+0241   D126~              INX H
+0242   D126~              JNZ C_RWR1
+0243   D126~            C_RWR2: 
+0244   D126~              CALL R65
+0245   D126~              LXI H,ERR
+0246   D126~              JC PRINT
+0247   D126~              LHLD LINEBUF+26  ;size области
+0248   D126~              MOV  C,L  ;
+0249   D126~              MOV  B,H  ;
+0250   D126~              LHLD LINEBUF+24  ;АДРЕС  начала области
+0251   D126~              LXI D,LINEBUF
+0252   D126~              LDAX D
+0253   D126~              CPI 'R'
+0254   D126~              JZ C_RWR3
+0255   D126~              CALL F_WRITE
+0256   D126~              JMP C_RWR4
+0257   D126~            C_RWR3: 
+0258   D126~              CALL F_READ
+0259   D126~            C_RWR4: 
+0260   D126             #endif ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0261   D126 21 0B D2      LXI H,RWR_OK
+0262   D129 C3 18 C8      JMP PRINT
+0263   D12C             
+0264   D12C~            #ifdef ORION
+0265   D12C~            #include "dos_orion_RUNF.inc"
+0266   D12C             #endif
+0267   D12C             
+0268   D12C~            #ifdef MX2
+0269   D12C~            #include "dos_mx_RUNF.inc"
+0270   D12C             #endif
+0271   D12C             
+0272   D12C             #ifdef STD
+0273   D12C             #include "dos_std_RUNF.inc"
+0001+  D12C             ;**********************************************
+0002+  D12C             RUNFILE: ;std
+0003+  D12C CD F1 D1      CALL PRINT_NEWLINE
+0004+  D12F 21 2A DE      LXI H,LINEBUF
+0005+  D132 0E 2E         MVI C,'.'
+0006+  D134 CD 71 D4      CALL STRCHR
+0007+  D137 D2 40 D1      JNC RUNF1
+0008+  D13A 11 16 D2      LXI D,DOTRK
+0009+  D13D CD 7B D4      CALL STRCPY
+0010+  D140 11 2A DE    RUNF1:  LXI D,LINEBUF
+0011+  D143 CD 55 D7      CALL F_OPEN
+0012+  D146 DA F1 D0      JC C_DIRNO ; no file
+0013+  D149             RD_4B:
+0014+  D149 21 2A DE      LXI H,LINEBUF
+0015+  D14C 0E 2E         MVI C,'.'
+0016+  D14E CD 71 D4      CALL STRCHR
+0017+  D151 23            INX H
+0018+  D152 7E            mov A,M
+0019+  D153 FE 4D         CPI 'M'
+0020+  D155 C2 70 D1      JNZ RD_4B1
+0021+  D158 23            INX H
+0022+  D159 7E            mov A,M
+0023+  D15A FE 4F         CPI 'O'
+0024+  D15C C2 70 D1      JNZ RD_4B1
+0025+  D15F 23            INX H
+0026+  D160 7E            mov A,M
+0027+  D161 FE 4E         CPI 'N'
+0028+  D163 C2 70 D1      JNZ RD_4B1
+0029+  D166 21 00 C0      LXI H,0c000h
+0030+  D169 01 00 20      LXI B,02000h
+0031+  D16C E5            PUSH H ;сохраняем адрес старта, а ret после F_READ сделает переход на этот адрес
+0032+  D16D C3 A1 D1      JMP RD_MON
+0033+  D170             RD_4B1:
+0034+  D170 01 04 00      LXI B,4 ; читаем из RK? файла адрес старта программы/куда складывать в памяти и конец до которого складываем данные в памяти
+0035+  D173 21 2A DE      LXI H,LINEBUF
+0036+  D176 E5            push H
+0037+  D177 CD 71 D7      CALL F_READ
+0038+  D17A E1            pop H
+0039+  D17B 5E            MOV e,M
+0040+  D17C 23            INX H
+0041+  D17D 56            MOV d,M
+0042+  D17E 23            INX H
+0043+  D17F 7E            MOV A,M
+0044+  D180 23            INX H
+0045+  D181 46            MOV b,M
+0046+  D182 93            SUB E
+0047+  D183 4F            MOV c,A
+0048+  D184 78            MOV A,b
+0049+  D185 9A            SBB D
+0050+  D186 47            MOV b,A
+0051+  D187 03            INX B  ;размер файла
+0052+  D188 EB            XCHG
+0053+  D189 E5            PUSH H ;сохраняем адрес старта, а ret после F_READ сделает переход на этот адрес
+0054+  D18A 7C            mov A,H
+0055+  D18B CD 15 C8      call PRHEX
+0056+  D18E 7D            mov A,L
+0057+  D18F CD 15 C8      call PRHEX
+0058+  D192 C5            push B
+0059+  D193 0E 2C         MVI C,','
+0060+  D195 CD 09 C8      CALL PUTC
+0061+  D198 C1            pop B
+0062+  D199 78            mov A,B
+0063+  D19A CD 15 C8      call PRHEX
+0064+  D19D 79            mov A,C
+0065+  D19E CD 15 C8      call PRHEX
+0066+  D1A1             RD_MON:
+0067+  D1A1 CD 71 D7      CALL F_READ
+0068+  D1A4 C3 38 D2      jmp SD_OFF
+0274   D1A7             #endif
+0275   D1A7             
+0276   D1A7~            #ifdef GAL
+0277   D1A7~            #include "dos_gal_RUNF.inc"
+0278   D1A7             #endif
+0279   D1A7             
+0280   D1A7~            #ifdef TRS80
+0281   D1A7~            #include "dos_trs_RUNF.inc"
+0282   D1A7             #endif
+0283   D1A7             
+0284   D1A7~            #ifdef APOGEE
+0285   D1A7~            #include "dos_rk_RUNF.inc"
+0286   D1A7             #endif
+0287   D1A7             
+0288   D1A7~            #ifdef RK86
+0289   D1A7~            #include "dos_rk_RUNF.inc"
+0290   D1A7             #endif
+0291   D1A7             
+0292   D1A7~            #ifdef UT88
+0293   D1A7~            #include "dos_rk_RUNF.inc"
+0294   D1A7             #endif
+0295   D1A7             
+0296   D1A7 21 2A DE    READLN: LXI H,LINEBUF
+0297   D1AA             READL1:
+0298   D1AA CD 03 C8     CALL GETC
+0299   D1AD FE 08         CPI 8
+0300   D1AF CA CA D1      JZ READL3
+0301   D1B2 FE 5F         CPI 5FH
+0302   D1B4 CA CA D1      JZ READL3
+0303   D1B7 FE 18         CPI 18H
+0304   D1B9 CA E3 D1      JZ READL4
+0305   D1BC 36 00         MVI M,0
+0306   D1BE FE 0D         CPI 0DH
+0307   D1C0 C8            RZ
+0308   D1C1~            #ifdef GAL
+0309   D1C1~              CPI 1DH       
+0310   D1C1~              JNZ READL5    
+0311   D1C1~              DCX H         
+0312   D1C1~              JMP READL2    
+0313   D1C1~            READL5:
+0314   D1C1             #endif
+0315   D1C1 77            MOV M,A
+0316   D1C2 23            INX H
+0317   D1C3 4F          READL2: MOV C,A
+0318   D1C4 CD 09 C8      CALL PUTC
+0319   D1C7 C3 AA D1      JMP READL1
+0320   D1CA 7D          READL3: MOV A,L
+0321   D1CB FE 2A         CPI LINEBUF & 255
+0322   D1CD CA AA D1      JZ READL1
+0323   D1D0 0E 08         MVI C,8
+0324   D1D2 CD 09 C8      CALL PUTC
+0325   D1D5 0E 20         MVI C,20H
+0326   D1D7 CD 09 C8      CALL PUTC
+0327   D1DA 0E 08         MVI C,8
+0328   D1DC CD 09 C8      CALL PUTC
+0329   D1DF 2B            DCX H
+0330   D1E0 C3 AA D1      JMP READL1
+0331   D1E3 7E          READL4: MOV A,M
+0332   D1E4 B7            ORA A
+0333   D1E5 CA AA D1      JZ READL1
+0334   D1E8 FE 0D         CPI 0DH
+0335   D1EA CA AA D1      JZ READL1
+0336   D1ED 23            INX H
+0337   D1EE C3 C3 D1      JMP READL2
+0338   D1F1             ;**********************************************
+0339   D1F1~            #ifdef RWR ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0340   D1F1~            
+0341   D1F1~            SET_LAST_SPACE:
+0342   D1F1~              INX D
+0343   D1F1~              push D
+0344   D1F1~              mvi c,0AH
+0345   D1F1~            R66:
+0346   D1F1~              LDAX D
+0347   D1F1~              CPI 0
+0348   D1F1~              JNZ R68
+0349   D1F1~              MVI A,20H
+0350   D1F1~              STAX D
+0351   D1F1~              JMP R67
+0352   D1F1~            R68:
+0353   D1F1~              INX D
+0354   D1F1~              DCR C
+0355   D1F1~              JNZ R66
+0356   D1F1~            R67:
+0357   D1F1~              pop D
+0358   D1F1~              ret
+0359   D1F1~            ;**********************************************
+0360   D1F1~            ;Подпрограмма ввода адресов для функции
+0361   D1F1~            ;**********************************************
+0362   D1F1~            R65:
+0363   D1F1~              XCHG
+0364   D1F1~            #ifdef MX2
+0365   D1F1~              call SET_LAST_SPACE
+0366   D1F1~              call 0c839H ; получить из строки в DE шестнадцатеричный код, помещенный в HL
+0367   D1F1~              shld LINEBUF+24
+0368   D1F1~              RC
+0369   D1F1~              call 0c839H ; получить из строки в DE шестнадцатеричный код, помещенный в HL
+0370   D1F1~              shld LINEBUF+26
+0371   D1F1~              RC
+0372   D1F1~              ret
+0373   D1F1~            #else
+0374   D1F1~              LXI  H,0
+0375   D1F1~              shld LINEBUF+24
+0376   D1F1~              shld LINEBUF+26
+0377   D1F1~              CALL R7C 
+0378   D1F1~              shld LINEBUF+24
+0379   D1F1~              RC
+0380   D1F1~              CALL R7C 
+0381   D1F1~              shld LINEBUF+26
+0382   D1F1~            ;  RC
+0383   D1F1~              ret
+0384   D1F1~            ;*********************************************
+0385   D1F1~            ;Подпрограмма ввода одного 16 адреса
+0386   D1F1~            ;*********************************************
+0387   D1F1~            R7C:  
+0388   D1F1~                  LXI  H,0 
+0389   D1F1~                  MVI  B,0
+0390   D1F1~            R7F:  
+0391   D1F1~                  LDAX D
+0392   D1F1~                  INX  D
+0393   D1F1~                  CPI  00H
+0394   D1F1~                  JZ   R7E 
+0395   D1F1~                  CPI  2CH
+0396   D1F1~                  RZ
+0397   D1F1~                  CPI  20H
+0398   D1F1~                  JZ   R7F 
+0399   D1F1~                  SUI  30H
+0400   D1F1~                  JM   R79 
+0401   D1F1~                  CPI  0AH
+0402   D1F1~                  JM   R80 
+0403   D1F1~                  CPI  11H
+0404   D1F1~                  JM   R79 
+0405   D1F1~                  CPI  17H
+0406   D1F1~                  JP   R79 
+0407   D1F1~                  SUI  07H
+0408   D1F1~            R80:
+0409   D1F1~                  MOV  C,A
+0410   D1F1~                  DAD  H
+0411   D1F1~                  DAD  H
+0412   D1F1~                  DAD  H
+0413   D1F1~                  DAD  H
+0414   D1F1~                  JC   R79 
+0415   D1F1~                  DAD  B
+0416   D1F1~                  JMP  R7F 
+0417   D1F1~            R79:
+0418   D1F1~              STC
+0419   D1F1~            R7E:
+0420   D1F1~                  RET
+0421   D1F1~            #endif
+0422   D1F1             #endif ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0423   D1F1             
+0424   D1F1             ;*********************************************
+0425   D1F1             PRINT_NEWLINE:
+0426   D1F1 21 F8 D1      LXI H,NEWLINE
+0427   D1F4 CD 18 C8      CALL PRINT
+0428   D1F7 C9            RET
+0429   D1F8             
+0430   D1F8~            #ifdef TRS80
+0431   D1F8~            NEWLINE:DB 0DH,0
+0432   D1F8             #else
+0433   D1F8 0D 0A 00    NEWLINE:DB 0DH,0AH,0
+0434   D1FB             #endif
+0435   D1FB             
+0436   D1FB~            #ifdef GAL
+0437   D1FB~            A_DRIVE:DB "A:",0
+0438   D1FB~            NOFILES:DB "NO FILE(S)",0DH,0
+0439   D1FB             #else
+0440   D1FB~            #ifdef TRS80
+0441   D1FB~            A_DRIVE:DB "A:",0
+0442   D1FB~            NOFILES:DB "NO FILE(S)",0DH,0
+0443   D1FB             #else
+0444   D1FB 0D 0A 41 3A A_DRIVE:DB 0DH,0AH,"A:",0
+0444   D1FF 00 
+0445   D200 4E 4F 20 46 NOFILES:DB "NO FILE(S)",0
+0445   D204 49 4C 45 28 
+0445   D208 53 29 00 
+0446   D20B             #endif
+0447   D20B             #endif
+0448   D20B             
+0449   D20B 4F 4B 0D 00 RWR_OK: DB "OK",0DH,0
+0450   D20F 45 52 52 0D ERR:    DB "ERR",0DH,0
+0450   D213 00 
+0451   D214 2A 00       ALLFILS:DB "*",0
+0452   D216             
+0453   D216             #ifdef STD
+0454   D216 2E 52 4B 53 DOTRK:  DB ".RKS",0
+0454   D21A 00 
+0455   D21B             #endif
+0456   D21B             
+0457   D21B~            #ifdef MX2
+0458   D21B~            DOTRK:  DB ".RKX",0
+0459   D21B~            DOTRKS: DB ".RKS",0
+0460   D21B~            M2MON:  DB "M2_C000.MON",0
+0461   D21B             #endif
+0462   D21B             
+0463   D21B~            #ifdef APOGEE
+0464   D21B~            DOTRK:  DB ".RKA",0
+0465   D21B             #endif
+0466   D21B             
+0467   D21B~            #ifdef RK86
+0468   D21B~            DOTRK:  DB ".RKR",0
+0469   D21B             #endif
+0470   D21B             
+0471   D21B~            #ifdef UT88
+0472   D21B~            DOTRK:  DB ".RKU",0
+0473   D21B             #endif
+0474   D21B             
+0475   D21B~            #ifdef GAL
+0476   D21B~            DOTRK:  DB ".GTP",0
+0477   D21B             #endif
+0478   D21B             
+0479   D21B~            #ifdef TRS80
+0480   D21B~            DOTRK:  DB ".CAS",0
+0481   D21B             #endif
+0482   D21B             
+0483   D21B             
+0484   D21B~            #ifdef ORION
+0485   D21B~            DOTRK:  DB 024h,".RKO",0
+0486   D21B             #endif
+0487   D21B             
+0488   D21B 0D 4E 4F 20 NODIR:  DB 0DH,"NO " 
+0489   D21F 44 49 52 00 CMDLST: DB "DIR",0
+0490   D223 8B D0               DW C_DIR
+0491   D225 43 44 00            DB "CD",0
+0492   D228 F7 D0               DW C_CD
+0493   D22A 58 00               DB "X",0
+0494   D22C 20 D1               DW C_X
+0495   D22E~            #ifdef RWR ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0496   D22E~                    DB "R",0
+0497   D22E~                    DW C_RWR
+0498   D22E~                    DB "W",0
+0499   D22E~                    DW C_RWR
+0500   D22E             #endif ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0501   D22E 49 00               DB "I",0
+0502   D230 19 D1               DW C_I
+0503   D232~            #ifdef GAL
+0504   D232~                    DB "WB",0
+0505   D232~                    DW C_WB
+0506   D232             #endif
+0507   D232~            #ifdef ORION
+0508   D232~                    DB "L",0
+0509   D232~                    DW C_LRD
+0510   D232~                    DB "S",0
+0511   D232~                    DW C_SRD
+0512   D232             #endif
+0513   D232~            #ifdef RWR ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0514   D232~            #ifdef MX2
+0515   D232~                    DB "L",0
+0516   D232~                    DW C_LRD
+0517   D232~                    DB "S",0
+0518   D232~                    DW C_SRD
+0519   D232~            #endif
+0520   D232             #endif ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0521   D232 00                  DB 0
+0522   D233             
+0523   D233             #include "sd_proc.inc"
+0001+  D233             ;http://elm-chan.org/docs/mmc/ima/sdinit.png
+0002+  D233             ; command response R1
+0003+  D233             ; 0x00 ok
+0004+  D233             ; or bitfield
+0005+  D233             ; 0x01 idle state
+0006+  D233             ; 0x02 erase reset
+0007+  D233             ; 0x04 illegal command
+0008+  D233             ; 0x08 command crc error
+0009+  D233             ; 0x10 erase sequence error
+0010+  D233             ; 0x20 address error
+0011+  D233             ; 0x40 parameter error
+0012+  D233             ; 0x80 timeout (other bits meaningless)
+0013+  D233             ;
+0014+  D233             ; packet token
+0015+  D233             ; 0xFF none yet
+0016+  D233             ; 0xFE ok
+0017+  D233             ; or bitfield
+0018+  D233             ; 0x01 error
+0019+  D233             ; 0x02 controller error
+0020+  D233             ; 0x04 media ecc failed
+0021+  D233             ; 0x08 out of range
+0022+  D233             ; 0x10 card is locked
+0023+  D233             
+0024+  D233             CMD0   EQU 040h |  0 ; resets the card
+0025+  D233             CMD8   EQU 040h |  8 ; read IF_COND
+0026+  D233             CMD9   EQU 040h |  9 ; read CSD
+0027+  D233             CMD10  EQU 040h | 10 ; read CID
+0028+  D233             CMD16  EQU 040h | 16 ; set R/W block
+0029+  D233             CMD17  EQU 040h | 17 ; read block
+0030+  D233             CMD24  EQU 040h | 24 ; write block
+0031+  D233             CMD55  EQU 040h | 55 ; next command is ACMDxx
+0032+  D233             CMD58  EQU 040h | 58 ; READ_OCR
+0033+  D233             CMD59  EQU 040h | 59 ; CRC_ON_OFF
+0034+  D233             ACMD41 EQU 040h | 41 ; send host capacity support, init card
+0035+  D233             
+0036+  D233~            #ifdef SD_n8vem
+0037+  D233~            
+0038+  D233~            SD_PWR  EQU 08h ; POWER OFF/ON=0/1 (positive logic)
+0039+  D233~            SD_CS   EQU 04h   ; NPN inverter, positive logic.
+0040+  D233~            SD_CLK  EQU 02h
+0041+  D233~            SD_DOUT EQU 01h
+0042+  D233~            SD_DIN  EQU 80h 
+0043+  D233~            
+0044+  D233~            SD_ON:
+0045+  D233~               MVI A,SD_PWR+SD_CS
+0046+  D233~               JMP SD_CONF
+0047+  D233~            SD_OFF:
+0048+  D233~               XRA A
+0049+  D233~            SD_CONF:
+0050+  D233~              STA SD_DATA_PORT
+0051+  D233~              RET
+0052+  D233~            SD_FIN: MVI A,0FFh
+0053+  D233~            SD_PUT: PUSH H
+0054+  D233~              push B
+0055+  D233~             ;===========================
+0056+  D233~            ;  push psw
+0057+  D233~            ;  call PRHEX
+0058+  D233~            ;  pop psw
+0059+  D233~             ;===========================
+0060+  D233~              mov C,A             ; ld  c, a
+0061+  D233~              mvi B,8             ; ld  b, 8
+0062+  D233~              LXI H,SD_DATA_PORT  ; ld  hl, SD_ADDR 
+0063+  D233~            L3:                   ;
+0064+  D233~              mov A,C             ;-rl  c
+0065+  D233~              rlc                 ;-
+0066+  D233~              mov C,A             ;-
+0067+  D233~              mvi A,6             ; ld  a, 6    ; (SD_PWR+SD_CS)/2    
+0068+  D233~              ral                 ; rla     ; SD_DOUT is RTC.0
+0069+  D233~              mov M,A             ; ld  (hl), a   ; clock is low
+0070+  D233~              ori SD_CLK          ; or  SD_CLK
+0071+  D233~              mov M,A             ; ld  (hl), a   ; rising clock edge
+0072+  D233~              dcr B               ;-djnz  L3
+0073+  D233~              jnz L3              ;-
+0074+  D233~              xri SD_CLK          ; xor SD_CLK
+0075+  D233~              mov M,A             ; ld  (hl), a   ; leave with clock low
+0076+  D233~              pop B
+0077+  D233~            POPHRET:POP H
+0078+  D233~              RET
+0079+  D233~            
+0080+  D233~            SD_GET: PUSH H
+0081+  D233~              push B
+0082+  D233~              mvi B,8             ;-ld  d, 8
+0083+  D233~              LXI H,SD_DATA_PORT  ; ld  hl, SD_ADDR 
+0084+  D233~            L2:
+0085+  D233~              MOV A,M             ; ld  a, (hl)
+0086+  D233~              rlc                 ; rla     ; SD_DIN is RTC.7
+0087+  D233~              mov A,C             ;-rl  e
+0088+  D233~              ral                 ;-
+0089+  D233~              mov C,A             ;-
+0090+  D233~              mvi A, 0Fh          ; ld  a, SD_PWR + SD_CS + SD_DOUT + SD_CLK
+0091+  D233~              mov M,A             ; ld  (hl), a
+0092+  D233~              ANI 0Dh             ; and NOT SD_CLK
+0093+  D233~              mov M,A             ; ld  (hl), a
+0094+  D233~              dcr B               ;-dec d
+0095+  D233~              jnz L2              ;-jr  nz, L2
+0096+  D233~              mov A,C             ;-ld  a, e
+0097+  D233~              pop B
+0098+  D233~              POP H
+0099+  D233~             ;===========================
+0100+  D233~            ;  push psw
+0101+  D233~            ;  call PRHEX
+0102+  D233~            ;  pop psw
+0103+  D233~             ;===========================
+0104+  D233~              RET
+0105+  D233             #endif ;end #ifdef SD_n8vem
+0106+  D233             
+0107+  D233~            #ifdef GAL_AY_SD_n8vem
+0108+  D233~            
+0109+  D233~            SD_AY_PORT EQU 0
+0110+  D233~            AY_PORTA EQU 14
+0111+  D233~            AY_PORTB EQU 15
+0112+  D233~            AY_PORTCMD EQU 7
+0113+  D233~            
+0114+  D233~            SD_PWR  EQU 080h   ; POWER OFF/ON=0/1
+0115+  D233~            SD_CS   EQU 040h   
+0116+  D233~            SD_CLK  EQU 020h
+0117+  D233~            SD_DOUT EQU 01h
+0118+  D233~            ;SD_DIN  EQU 80h 
+0119+  D233~            
+0120+  D233~            SD_ON:
+0121+  D233~               MVI A,AY_PORTB
+0122+  D233~               out SD_AY_PORT
+0123+  D233~               MVI A,SD_PWR
+0124+  D233~               JMP SD_CONF
+0125+  D233~            SD_OFF:
+0126+  D233~               MVI A,AY_PORTCMD
+0127+  D233~               out SD_AY_PORT
+0128+  D233~               MVI A,(080H+3Fh)         ;portA input, portB output
+0129+  D233~               out SD_AY_PORT+1
+0130+  D233~               MVI A,AY_PORTB
+0131+  D233~               out SD_AY_PORT
+0132+  D233~               MVI A,SD_CS
+0133+  D233~            SD_CONF:
+0134+  D233~               out SD_AY_PORT+1
+0135+  D233~               RET
+0136+  D233~            
+0137+  D233~            SD_FIN: MVI A,0FFh
+0138+  D233~            SD_PUT: PUSH H
+0139+  D233~              push B
+0140+  D233~             ;===========================
+0141+  D233~            ;  push psw
+0142+  D233~            ;  call PRHEX
+0143+  D233~            ;  pop psw
+0144+  D233~             ;===========================
+0145+  D233~              mov C,A             ; ld  c, a
+0146+  D233~            ;  mvi B,8             ; ld  b, 8
+0147+  D233~            ;  LXI H,SD_PORTC  ; ld  hl, SD_ADDR 
+0148+  D233~              MVI A,AY_PORTB
+0149+  D233~              out SD_AY_PORT
+0150+  D233~            L3:                   ;
+0151+  D233~            ;  mov A,C             ;-rl  c
+0152+  D233~            ;  rlc                 ;-
+0153+  D233~            ;  mov C,A             ;-
+0154+  D233~            ;1
+0155+  D233~              DB 0CBh,11h ;rl c
+0156+  D233~              mvi A,40h ;6        ; ld  a, 6    ; (SD_PWR+/SD_CS)/2    
+0157+  D233~              ral                 ; rla     ; SD_DOUT is RTC.0
+0158+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; clock is low
+0159+  D233~              ori SD_CLK          ; or  SD_CLK
+0160+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; rising clock edge
+0161+  D233~            ;  dcr B               ;-djnz  L3
+0162+  D233~            ;  jnz L3              ;-
+0163+  D233~            ;2
+0164+  D233~              DB 0CBh,11h ;rl c
+0165+  D233~              mvi A,40h ;6        ; ld  a, 6    ; (SD_PWR+/SD_CS)/2    
+0166+  D233~              ral                 ; rla     ; SD_DOUT is RTC.0
+0167+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; clock is low
+0168+  D233~              ori SD_CLK          ; or  SD_CLK
+0169+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; rising clock edge
+0170+  D233~            ;3
+0171+  D233~              DB 0CBh,11h ;rl c
+0172+  D233~              mvi A,40h ;6        ; ld  a, 6    ; (SD_PWR+/SD_CS)/2    
+0173+  D233~              ral                 ; rla     ; SD_DOUT is RTC.0
+0174+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; clock is low
+0175+  D233~              ori SD_CLK          ; or  SD_CLK
+0176+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; rising clock edge
+0177+  D233~             ;4
+0178+  D233~              DB 0CBh,11h ;rl c
+0179+  D233~              mvi A,40h ;6        ; ld  a, 6    ; (SD_PWR+/SD_CS)/2    
+0180+  D233~              ral                 ; rla     ; SD_DOUT is RTC.0
+0181+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; clock is low
+0182+  D233~              ori SD_CLK          ; or  SD_CLK
+0183+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; rising clock edge
+0184+  D233~            ;5
+0185+  D233~              DB 0CBh,11h ;rl c
+0186+  D233~              mvi A,40h ;6        ; ld  a, 6    ; (SD_PWR+/SD_CS)/2    
+0187+  D233~              ral                 ; rla     ; SD_DOUT is RTC.0
+0188+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; clock is low
+0189+  D233~              ori SD_CLK          ; or  SD_CLK
+0190+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; rising clock edge
+0191+  D233~            ;6
+0192+  D233~              DB 0CBh,11h ;rl c
+0193+  D233~              mvi A,40h ;6        ; ld  a, 6    ; (SD_PWR+/SD_CS)/2    
+0194+  D233~              ral                 ; rla     ; SD_DOUT is RTC.0
+0195+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; clock is low
+0196+  D233~              ori SD_CLK          ; or  SD_CLK
+0197+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; rising clock edge
+0198+  D233~            ;7
+0199+  D233~              DB 0CBh,11h ;rl c
+0200+  D233~              mvi A,40h ;6        ; ld  a, 6    ; (SD_PWR+/SD_CS)/2    
+0201+  D233~              ral                 ; rla     ; SD_DOUT is RTC.0
+0202+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; clock is low
+0203+  D233~              ori SD_CLK          ; or  SD_CLK
+0204+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; rising clock edge
+0205+  D233~            ;8
+0206+  D233~              DB 0CBh,11h ;rl c
+0207+  D233~              mvi A,40h ;6        ; ld  a, 6    ; (SD_PWR+/SD_CS)/2    
+0208+  D233~              ral                 ; rla     ; SD_DOUT is RTC.0
+0209+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; clock is low
+0210+  D233~              ori SD_CLK          ; or  SD_CLK
+0211+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; rising clock edge
+0212+  D233~            
+0213+  D233~              xri SD_CLK          ; xor SD_CLK
+0214+  D233~              out SD_AY_PORT+1 ;  mov M,A    ; ld  (hl), a   ; leave with clock low
+0215+  D233~              pop B
+0216+  D233~            POPHRET:POP H
+0217+  D233~              RET
+0218+  D233~            
+0219+  D233~            SD_GET: PUSH H
+0220+  D233~              push B
+0221+  D233~            ;  mvi B,8             ;-ld  d, 8
+0222+  D233~            ;  LXI H,SD_PORTA  ; ld  hl, SD_ADDR 
+0223+  D233~            L2:
+0224+  D233~            ;1
+0225+  D233~              MVI A,AY_PORTA
+0226+  D233~              out SD_AY_PORT
+0227+  D233~              in SD_AY_PORT+2  ;  MOV A,M  ; ld  a, (hl)
+0228+  D233~              rlc                 ;        ; rla     ; SD_DIN is RTC.7
+0229+  D233~            ;  mov A,C             ;        ;-rl  e
+0230+  D233~            ;  ral                 ;-
+0231+  D233~            ;  mov C,A             ;-
+0232+  D233~              DB 0CBh,11h ;rl c
+0233+  D233~              MVI A,AY_PORTB
+0234+  D233~              out SD_AY_PORT
+0235+  D233~              mvi A,0A1h ;0Fh    ;        ; ld  a, SD_PWR + /SD_CS + SD_DOUT + SD_CLK
+0236+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0237+  D233~              ANI 81h ;0Dh        ;        ; and NOT SD_CLK
+0238+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0239+  D233~            ;  dcr B               ;        ;-dec d
+0240+  D233~            ;  jnz L2              ;        ;-jr  nz, L2
+0241+  D233~            ;2
+0242+  D233~              MVI A,AY_PORTA
+0243+  D233~              out SD_AY_PORT
+0244+  D233~              in SD_AY_PORT+2  ;  MOV A,M  ; ld  a, (hl)
+0245+  D233~              rlc                 ;        ; rla     ; SD_DIN is RTC.7
+0246+  D233~              DB 0CBh,11h ;rl c
+0247+  D233~              MVI A,AY_PORTB
+0248+  D233~              out SD_AY_PORT
+0249+  D233~              mvi A,0A1h ;0Fh    ;        ; ld  a, SD_PWR + /SD_CS + SD_DOUT + SD_CLK
+0250+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0251+  D233~              ANI 81h ;0Dh        ;        ; and NOT SD_CLK
+0252+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0253+  D233~            ;3
+0254+  D233~              MVI A,AY_PORTA
+0255+  D233~              out SD_AY_PORT
+0256+  D233~              in SD_AY_PORT+2  ;  MOV A,M  ; ld  a, (hl)
+0257+  D233~              rlc                 ;        ; rla     ; SD_DIN is RTC.7
+0258+  D233~              DB 0CBh,11h ;rl c
+0259+  D233~              MVI A,AY_PORTB
+0260+  D233~              out SD_AY_PORT
+0261+  D233~              mvi A,0A1h ;0Fh    ;        ; ld  a, SD_PWR + /SD_CS + SD_DOUT + SD_CLK
+0262+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0263+  D233~              ANI 81h ;0Dh        ;        ; and NOT SD_CLK
+0264+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0265+  D233~            ;4
+0266+  D233~              MVI A,AY_PORTA
+0267+  D233~              out SD_AY_PORT
+0268+  D233~              in SD_AY_PORT+2  ;  MOV A,M  ; ld  a, (hl)
+0269+  D233~              rlc                 ;        ; rla     ; SD_DIN is RTC.7
+0270+  D233~              DB 0CBh,11h ;rl c
+0271+  D233~              MVI A,AY_PORTB
+0272+  D233~              out SD_AY_PORT
+0273+  D233~              mvi A,0A1h ;0Fh    ;        ; ld  a, SD_PWR + /SD_CS + SD_DOUT + SD_CLK
+0274+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0275+  D233~              ANI 81h ;0Dh        ;        ; and NOT SD_CLK
+0276+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0277+  D233~            ;5
+0278+  D233~              MVI A,AY_PORTA
+0279+  D233~              out SD_AY_PORT
+0280+  D233~              in SD_AY_PORT+2  ;  MOV A,M  ; ld  a, (hl)
+0281+  D233~              rlc                 ;        ; rla     ; SD_DIN is RTC.7
+0282+  D233~              DB 0CBh,11h ;rl c
+0283+  D233~              MVI A,AY_PORTB
+0284+  D233~              out SD_AY_PORT
+0285+  D233~              mvi A,0A1h ;0Fh    ;        ; ld  a, SD_PWR + /SD_CS + SD_DOUT + SD_CLK
+0286+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0287+  D233~              ANI 81h ;0Dh        ;        ; and NOT SD_CLK
+0288+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0289+  D233~            ;6
+0290+  D233~              MVI A,AY_PORTA
+0291+  D233~              out SD_AY_PORT
+0292+  D233~              in SD_AY_PORT+2  ;  MOV A,M  ; ld  a, (hl)
+0293+  D233~              rlc                 ;        ; rla     ; SD_DIN is RTC.7
+0294+  D233~              DB 0CBh,11h ;rl c
+0295+  D233~              MVI A,AY_PORTB
+0296+  D233~              out SD_AY_PORT
+0297+  D233~              mvi A,0A1h ;0Fh    ;        ; ld  a, SD_PWR + /SD_CS + SD_DOUT + SD_CLK
+0298+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0299+  D233~              ANI 81h ;0Dh        ;        ; and NOT SD_CLK
+0300+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0301+  D233~            ;7
+0302+  D233~              MVI A,AY_PORTA
+0303+  D233~              out SD_AY_PORT
+0304+  D233~              in SD_AY_PORT+2  ;  MOV A,M  ; ld  a, (hl)
+0305+  D233~              rlc                 ;        ; rla     ; SD_DIN is RTC.7
+0306+  D233~              DB 0CBh,11h ;rl c
+0307+  D233~              MVI A,AY_PORTB
+0308+  D233~              out SD_AY_PORT
+0309+  D233~              mvi A,0A1h ;0Fh    ;        ; ld  a, SD_PWR + /SD_CS + SD_DOUT + SD_CLK
+0310+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0311+  D233~              ANI 81h ;0Dh        ;        ; and NOT SD_CLK
+0312+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0313+  D233~            ;8
+0314+  D233~              MVI A,AY_PORTA
+0315+  D233~              out SD_AY_PORT
+0316+  D233~              in SD_AY_PORT+2  ;  MOV A,M  ; ld  a, (hl)
+0317+  D233~              rlc                 ;        ; rla     ; SD_DIN is RTC.7
+0318+  D233~              DB 0CBh,11h ;rl c
+0319+  D233~              MVI A,AY_PORTB
+0320+  D233~              out SD_AY_PORT
+0321+  D233~              mvi A,0A1h ;0Fh    ;        ; ld  a, SD_PWR + /SD_CS + SD_DOUT + SD_CLK
+0322+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0323+  D233~              ANI 81h ;0Dh        ;        ; and NOT SD_CLK
+0324+  D233~              out SD_AY_PORT+1 ;  mov M,A  ; ld  (hl), a
+0325+  D233~            
+0326+  D233~              mov A,C             ;        ;-ld  a, e
+0327+  D233~             ;===========================
+0328+  D233~            ;  push psw
+0329+  D233~            ;  call PRHEX
+0330+  D233~            ;  pop psw
+0331+  D233~             ;===========================
+0332+  D233~              pop B
+0333+  D233~              POP H
+0334+  D233~              RET
+0335+  D233             #endif ;end #ifdef GAL_AY_SD_n8vem
+0336+  D233             
+0337+  D233~            #ifdef UT88_WW55_SD_n8vem
+0338+  D233~            
+0339+  D233~            SD_PORTA EQU SD_DATA_PORT_WW55+0
+0340+  D233~            ;SD_PORTB EQU SD_DATA_PORT_WW55+1
+0341+  D233~            SD_PORTC EQU SD_DATA_PORT_WW55+2
+0342+  D233~            SD_PORTCMD EQU SD_DATA_PORT_WW55+3
+0343+  D233~            
+0344+  D233~            SD_PWR  EQU 080h   ; POWER OFF/ON=0/1 (positive logic)
+0345+  D233~            SD_CS   EQU 040h   ; NPN inverter, positive logic.
+0346+  D233~            SD_CLK  EQU 020h
+0347+  D233~            SD_DOUT EQU 01h
+0348+  D233~            ;SD_DIN  EQU 80h 
+0349+  D233~            
+0350+  D233~            SD_ON:
+0351+  D233~               MVI A,090H ;mode0, portB,C output, portA input
+0352+  D233~               out SD_PORTCMD
+0353+  D233~               MVI A,SD_PWR
+0354+  D233~               JMP SD_CONF
+0355+  D233~               nop
+0356+  D233~            SD_OFF:
+0357+  D233~               MVI A,080H ;mode0, all ports output
+0358+  D233~               out SD_PORTCMD
+0359+  D233~               MVI A,SD_CS
+0360+  D233~            SD_CONF:
+0361+  D233~               out SD_PORTC
+0362+  D233~               RET
+0363+  D233~               nop
+0364+  D233~               nop
+0365+  D233~            
+0366+  D233~            SD_FIN: MVI A,0FFh
+0367+  D233~            SD_PUT: PUSH H
+0368+  D233~              push B
+0369+  D233~              mov C,A             ; ld  c, a
+0370+  D233~              mvi B,8             ; ld  b, 8
+0371+  D233~            ;  LXI H,SD_PORTC  ; ld  hl, SD_ADDR 
+0372+  D233~            L3:                   ;
+0373+  D233~              mov A,C             ;-rl  c
+0374+  D233~              rlc                 ;-
+0375+  D233~              mov C,A             ;-
+0376+  D233~              mvi A,40h ;6             ; ld  a, 6    ; (SD_PWR+/SD_CS)/2    
+0377+  D233~              ral                 ; rla     ; SD_DOUT is RTC.0
+0378+  D233~              out SD_PORTC        ; ld  (hl), a   ; clock is low
+0379+  D233~              ori SD_CLK          ; or  SD_CLK
+0380+  D233~              out SD_PORTC        ; ld  (hl), a   ; rising clock edge
+0381+  D233~              dcr B               ;-djnz  L3
+0382+  D233~              jnz L3              ;-
+0383+  D233~              xri SD_CLK          ; xor SD_CLK
+0384+  D233~              out SD_PORTC        ; ld  (hl), a   ; leave with clock low
+0385+  D233~              pop B
+0386+  D233~            POPHRET:POP H
+0387+  D233~              RET
+0388+  D233~            
+0389+  D233~            SD_GET: PUSH H
+0390+  D233~              push B
+0391+  D233~              mvi B,8             ;-ld  d, 8
+0392+  D233~            ;  LXI H,SD_PORTA  ; ld  hl, SD_ADDR 
+0393+  D233~            L2:
+0394+  D233~              in SD_PORTA         ; ld  a, (hl)
+0395+  D233~              rlc                 ; rla     ; SD_DIN is RTC.7
+0396+  D233~              mov A,C             ;-rl  e
+0397+  D233~              ral                 ;-
+0398+  D233~              mov C,A             ;-
+0399+  D233~              mvi A, 0a1h ;0Fh          ; ld  a, SD_PWR + /SD_CS + SD_DOUT + SD_CLK
+0400+  D233~              out SD_PORTC        ; ld  (hl), a
+0401+  D233~              ANI 81h ;0Dh             ; and NOT SD_CLK
+0402+  D233~              out SD_PORTC        ; ld  (hl), a
+0403+  D233~              dcr B               ;-dec d
+0404+  D233~              jnz L2              ;-jr  nz, L2
+0405+  D233~              mov A,C             ;-ld  a, e
+0406+  D233~              pop B
+0407+  D233~              POP H
+0408+  D233~              RET
+0409+  D233~            
+0410+  D233             #endif
+0411+  D233             
+0412+  D233             
+0413+  D233~            #ifdef RK86_WW55_SD_n8vem
+0414+  D233~            
+0415+  D233~            SD_PORTA EQU SD_DATA_PORT_WW55+0
+0416+  D233~            SD_PORTC EQU SD_DATA_PORT_WW55+2
+0417+  D233~            SD_PORTCMD EQU SD_DATA_PORT_WW55+3
+0418+  D233~            
+0419+  D233~            SD_PWR  EQU 080h   ; POWER OFF/ON=0/1 (positive logic)
+0420+  D233~            SD_CS   EQU 040h   ; NPN inverter, positive logic.
+0421+  D233~            SD_CLK  EQU 020h
+0422+  D233~            SD_DOUT EQU 01h
+0423+  D233~            ;SD_DIN  EQU 80h 
+0424+  D233~            
+0425+  D233~            SD_ON:
+0426+  D233~               MVI A,090H ;mode0, portB,C output, portA input
+0427+  D233~               STA SD_PORTCMD
+0428+  D233~               MVI A,SD_PWR
+0429+  D233~               JMP SD_CONF
+0430+  D233~            SD_OFF:
+0431+  D233~               MVI A,080H ;mode0, all ports output
+0432+  D233~               STA SD_PORTCMD
+0433+  D233~               MVI A,SD_CS
+0434+  D233~            SD_CONF:
+0435+  D233~               STA SD_PORTC
+0436+  D233~               RET
+0437+  D233~            
+0438+  D233~            SD_FIN: MVI A,0FFh
+0439+  D233~            SD_PUT: PUSH H
+0440+  D233~              push B
+0441+  D233~              mov C,A             ; ld  c, a
+0442+  D233~              mvi B,8             ; ld  b, 8
+0443+  D233~              LXI H,SD_PORTC  ; ld  hl, SD_ADDR 
+0444+  D233~            L3:                   ;
+0445+  D233~              mov A,C             ;-rl  c
+0446+  D233~              rlc                 ;-
+0447+  D233~              mov C,A             ;-
+0448+  D233~              mvi A,40h ;6             ; ld  a, 6    ; (SD_PWR+/SD_CS)/2    
+0449+  D233~              ral                 ; rla     ; SD_DOUT is RTC.0
+0450+  D233~              mov M,A             ; ld  (hl), a   ; clock is low
+0451+  D233~              ori SD_CLK          ; or  SD_CLK
+0452+  D233~              mov M,A             ; ld  (hl), a   ; rising clock edge
+0453+  D233~              dcr B               ;-djnz  L3
+0454+  D233~              jnz L3              ;-
+0455+  D233~              xri SD_CLK          ; xor SD_CLK
+0456+  D233~              mov M,A             ; ld  (hl), a   ; leave with clock low
+0457+  D233~              pop B
+0458+  D233~            POPHRET:POP H
+0459+  D233~              RET
+0460+  D233~            
+0461+  D233~            SD_GET: PUSH H
+0462+  D233~              push B
+0463+  D233~              mvi B,8             ;-ld  d, 8
+0464+  D233~              LXI H,SD_PORTA  ; ld  hl, SD_ADDR 
+0465+  D233~            L2:
+0466+  D233~              MOV A,M             ; ld  a, (hl)
+0467+  D233~              rlc                 ; rla     ; SD_DIN is RTC.7
+0468+  D233~              mov A,C             ;-rl  e
+0469+  D233~              ral                 ;-
+0470+  D233~              mov C,A             ;-
+0471+  D233~              mvi A, 0a1h ;0Fh          ; ld  a, SD_PWR + /SD_CS + SD_DOUT + SD_CLK
+0472+  D233~              inr l
+0473+  D233~              inr l
+0474+  D233~              mov M,A             ; ld  (hl), a
+0475+  D233~              ANI 81h ;0Dh             ; and NOT SD_CLK
+0476+  D233~              mov M,A             ; ld  (hl), a
+0477+  D233~              dcr l
+0478+  D233~              dcr l
+0479+  D233~              dcr B               ;-dec d
+0480+  D233~              jnz L2              ;-jr  nz, L2
+0481+  D233~              mov A,C             ;-ld  a, e
+0482+  D233~              pop B
+0483+  D233~              POP H
+0484+  D233~              RET
+0485+  D233             #endif ;end #ifdef RK86_WW55_SD_n8vem
+0486+  D233             
+0487+  D233~            #ifdef STD_WW55_SD_n8vem
+0488+  D233~            
+0489+  D233~            SD_PORTA EQU SD_DATA_PORT_WW55+0
+0490+  D233~            SD_PORTC EQU SD_DATA_PORT_WW55+2
+0491+  D233~            SD_PORTCMD EQU SD_DATA_PORT_WW55+3
+0492+  D233~            
+0493+  D233~            SD_PWR  EQU 080h   ; POWER OFF/ON=0/1 (positive logic)
+0494+  D233~            SD_CS   EQU 040h   ; NPN inverter, positive logic.
+0495+  D233~            SD_CLK  EQU 020h
+0496+  D233~            SD_DOUT EQU 01h
+0497+  D233~            ;SD_DIN  EQU 80h 
+0498+  D233~            
+0499+  D233~            SD_ON:
+0500+  D233~               MVI A,090H ;mode0, portB,C output, portA input
+0501+  D233~               STA SD_PORTCMD
+0502+  D233~               MVI A,SD_PWR
+0503+  D233~               JMP SD_CONF
+0504+  D233~            SD_OFF:
+0505+  D233~               MVI A,080H ;mode0, all ports output
+0506+  D233~               STA SD_PORTCMD
+0507+  D233~               MVI A,SD_CS
+0508+  D233~            SD_CONF:
+0509+  D233~               STA SD_PORTC
+0510+  D233~               RET
+0511+  D233~            
+0512+  D233~            SD_FIN: MVI A,0FFh
+0513+  D233~            SD_PUT: PUSH H
+0514+  D233~              push B
+0515+  D233~              mov C,A             ; ld  c, a
+0516+  D233~              mvi B,8             ; ld  b, 8
+0517+  D233~              LXI H,SD_PORTC  ; ld  hl, SD_ADDR 
+0518+  D233~            L3:                   ;
+0519+  D233~              mov A,C             ;-rl  c
+0520+  D233~              rlc                 ;-
+0521+  D233~              mov C,A             ;-
+0522+  D233~              mvi A,40h ;6             ; ld  a, 6    ; (SD_PWR+/SD_CS)/2    
+0523+  D233~              ral                 ; rla     ; SD_DOUT is RTC.0
+0524+  D233~              mov M,A             ; ld  (hl), a   ; clock is low
+0525+  D233~              ori SD_CLK          ; or  SD_CLK
+0526+  D233~              mov M,A             ; ld  (hl), a   ; rising clock edge
+0527+  D233~              dcr B               ;-djnz  L3
+0528+  D233~              jnz L3              ;-
+0529+  D233~              xri SD_CLK          ; xor SD_CLK
+0530+  D233~              mov M,A             ; ld  (hl), a   ; leave with clock low
+0531+  D233~              pop B
+0532+  D233~            POPHRET:POP H
+0533+  D233~              RET
+0534+  D233~            
+0535+  D233~            SD_GET: PUSH H
+0536+  D233~              push B
+0537+  D233~              mvi B,8             ;-ld  d, 8
+0538+  D233~              LXI H,SD_PORTA  ; ld  hl, SD_ADDR 
+0539+  D233~            L2:
+0540+  D233~              MOV A,M             ; ld  a, (hl)
+0541+  D233~              rlc                 ; rla     ; SD_DIN is RTC.7
+0542+  D233~              mov A,C             ;-rl  e
+0543+  D233~              ral                 ;-
+0544+  D233~              mov C,A             ;-
+0545+  D233~              mvi A, 0a1h ;0Fh          ; ld  a, SD_PWR + /SD_CS + SD_DOUT + SD_CLK
+0546+  D233~              inr l
+0547+  D233~              inr l
+0548+  D233~              mov M,A             ; ld  (hl), a
+0549+  D233~              ANI 81h ;0Dh             ; and NOT SD_CLK
+0550+  D233~              mov M,A             ; ld  (hl), a
+0551+  D233~              dcr l
+0552+  D233~              dcr l
+0553+  D233~              dcr B               ;-dec d
+0554+  D233~              jnz L2              ;-jr  nz, L2
+0555+  D233~              mov A,C             ;-ld  a, e
+0556+  D233~              pop B
+0557+  D233~              POP H
+0558+  D233~              RET
+0559+  D233             #endif ;end #ifdef STD_WW55_SD_n8vem
+0560+  D233             
+0561+  D233~            #ifdef SD_msx
+0562+  D233~            SD_ON:  
+0563+  D233~              DB 3Eh ; <- MVI A,0AFh
+0564+  D233~            SD_OFF:
+0565+  D233~              XRA A        ; <- 0AFh
+0566+  D233~              STA SD_CONF_PORT
+0567+  D233~            SD_FIN: MVI A,0FFh
+0568+  D233~            SD_PUT: PUSH H
+0569+  D233~             ;===========================
+0570+  D233~            ;  push psw
+0571+  D233~            ;  call PRHEX
+0572+  D233~            ;  pop psw
+0573+  D233~             ;===========================
+0574+  D233~              LXI H,SD_DATA_PORT
+0575+  D233~              MOV M,A
+0576+  D233~              RLC
+0577+  D233~              MOV M,A
+0578+  D233~              RLC
+0579+  D233~              MOV M,A
+0580+  D233~              RLC
+0581+  D233~              MOV M,A
+0582+  D233~              RLC
+0583+  D233~              MOV M,A
+0584+  D233~              RLC
+0585+  D233~              MOV M,A
+0586+  D233~              RLC
+0587+  D233~              MOV M,A
+0588+  D233~              RLC
+0589+  D233~              MOV M,A
+0590+  D233~            POPHRET:POP H
+0591+  D233~              RET
+0592+  D233~            
+0593+  D233~            SD_GET: PUSH H
+0594+  D233~              LXI H,SD_DATA_PORT
+0595+  D233~              MVI A,0FFh
+0596+  D233~              MOV M,A
+0597+  D233~              MOV M,A
+0598+  D233~              MOV M,A
+0599+  D233~              MOV M,A
+0600+  D233~              MOV M,A
+0601+  D233~              MOV M,A
+0602+  D233~              MOV M,A
+0603+  D233~              MOV M,A
+0604+  D233~              MOV A,M
+0605+  D233~              POP H
+0606+  D233~             ;===========================
+0607+  D233~            ;  push psw
+0608+  D233~            ;  call PRHEX
+0609+  D233~            ;  pop psw
+0610+  D233~             ;===========================
+0611+  D233~              RET
+0612+  D233~            
+0613+  D233             #endif ;end #ifdef SD_msx
+0614+  D233             
+0615+  D233             
+0616+  D233~            #ifdef RK86_WW55_SD_HWM_PVV
+0617+  D233~            
+0618+  D233~            #define SD_CS 32 ;0x20h
+0619+  D233~            #define SD_WR 16 ;0x10h
+0620+  D233~            #define SD_A0  8 ;0x08h
+0621+  D233~            
+0622+  D233~            SD_ON:
+0623+  D233~               MVI A,090H ;mode0, portB,C output, portA input
+0624+  D233~               STA SD_DATA_PORT_WW55+3 ;0a003H
+0625+  D233~               MVI A,10h
+0626+  D233~               JMP SD_CONF
+0627+  D233~            SD_OFF:
+0628+  D233~               MVI A,080H ;mode0, all ports output
+0629+  D233~               STA SD_DATA_PORT_WW55+3 ;0a003H
+0630+  D233~               MVI A,080H|SD_WR ;0F8h ; 0b10000000 CS_ROM=1, 0, CS_SD=0, WR=1
+0631+  D233~               STA SD_DATA_PORT_WW55+2 ;0a002H ;SD_CONF_PORT
+0632+  D233~               MVI A,00h
+0633+  D233~            SD_CONF:
+0634+  D233~               STA SD_DATA_PORT_WW55+1 ;0a001H ;SD_DATA_PORT
+0635+  D233~               MVI A,080H|SD_CS|SD_A0 ;0F8h ;098h ; 0b10011000 CS_ROM=1, 0, CS_SD=1, WR=0, SD_A0=1
+0636+  D233~               STA SD_DATA_PORT_WW55+2 ;0a002H ;SD_CONF_PORT
+0637+  D233~               MVI A,080H|SD_WR|SD_A0 ;0F0h ; 0b11110000 CS_ROM=1, 0, CS_SD=0, WR=1 
+0638+  D233~               STA SD_DATA_PORT_WW55+2 ;0a002H ;SD_CONF_PORT
+0639+  D233~               RET
+0640+  D233~            SD_FIN: MVI A,0FFh
+0641+  D233~            SD_PUT:
+0642+  D233~               STA SD_DATA_PORT_WW55+1 ;0a001H ;SD_DATA_PORT
+0643+  D233~               MVI A,080H|SD_CS ;090h ; 0b10010000 CS_ROM=1, 0, CS_SD=1, WR=0
+0644+  D233~               STA SD_DATA_PORT_WW55+2 ;0a002H ;SD_CONF_PORT
+0645+  D233~               MVI A,080H|SD_WR ;0F0h ; 0b11110000 CS_ROM=1, 0, CS_SD=0, WR=1 
+0646+  D233~               STA SD_DATA_PORT_WW55+2 ;0a002H ;SD_CONF_PORT
+0647+  D233~             ;===========================
+0648+  D233~            ;  push psw
+0649+  D233~            ;  call PRHEX
+0650+  D233~            ;  pop psw
+0651+  D233~             ;===========================
+0652+  D233~               RET
+0653+  D233~            POPHRET:POP H
+0654+  D233~              RET
+0655+  D233~            
+0656+  D233~            SD_GET:
+0657+  D233~               CALL SD_FIN
+0658+  D233~               MVI A,080H|SD_CS|SD_WR ;0B0h ; 0b10110000 CS_ROM=1, 0, CS_SD=1, WR=1
+0659+  D233~               STA SD_DATA_PORT_WW55+2 ;0a002H ;SD_CONF_PORT
+0660+  D233~               LDA SD_DATA_PORT_WW55 ;0a000H ;SD_DATA_PORT
+0661+  D233~               push PSW
+0662+  D233~               MVI A,080H|SD_WR ;0F0h ; 0b11110000 CS_ROM=1, 0, CS_SD=0, WR=1 
+0663+  D233~               STA SD_DATA_PORT_WW55+2 ;0a002H ;SD_CONF_PORT
+0664+  D233~               pop PSW
+0665+  D233~             ;===========================
+0666+  D233~            ;  push psw
+0667+  D233~            ;  call PRHEX
+0668+  D233~            ;  pop psw
+0669+  D233~             ;===========================
+0670+  D233~              RET
+0671+  D233             #endif ;end #ifdef RK86_WW55_SD_HWM_PVV
+0672+  D233             
+0673+  D233             
+0674+  D233             #ifdef SD_HWM_PVV
+0675+  D233             
+0676+  D233             SD_ON:
+0677+  D233 3E 0F          MVI A,0Fh
+0678+  D235 C3 3A D2       JMP SD_CONF
+0679+  D238             SD_OFF:
+0680+  D238 3E 0C          MVI A,0ch
+0681+  D23A             SD_CONF:
+0682+  D23A 32 01 F0       STA SD_CONF_PORT
+0683+  D23D C9             RET
+0684+  D23E 3E FF       SD_FIN: MVI A,0FFh
+0685+  D240             SD_PUT:
+0686+  D240 32 00 F0       STA SD_DATA_PORT
+0687+  D243 00             NOP
+0688+  D244~            #ifdef MX2
+0689+  D244~            WaitSPI_1:
+0690+  D244~                  LDA SD_CONF_PORT
+0691+  D244~                  ANI 040h
+0692+  D244~                  JNZ WaitSPI_1    ; ждём окончания сигнала BUSY
+0693+  D244             #else
+0694+  D244 00             NOP
+0695+  D245             #endif
+0696+  D245              ;===========================
+0697+  D245             ;  push psw
+0698+  D245             ;  call PRHEX
+0699+  D245             ;  pop psw
+0700+  D245              ;===========================
+0701+  D245 C9             RET
+0702+  D246 E1          POPHRET:POP H
+0703+  D247 C9            RET
+0704+  D248             
+0705+  D248             SD_GET:
+0706+  D248 CD 3E D2       CALL SD_FIN
+0707+  D24B~            #ifdef MX2
+0708+  D24B~            WaitSPI:
+0709+  D24B~                  LDA SD_CONF_PORT
+0710+  D24B~                  ANI 040h
+0711+  D24B~                  JNZ WaitSPI    ; ждём окончания сигнала BUSY
+0712+  D24B             #else
+0713+  D24B 00             NOP
+0714+  D24C 00             NOP
+0715+  D24D             #endif
+0716+  D24D 3A 00 F0       LDA SD_DATA_PORT
+0717+  D250              ;===========================
+0718+  D250             ;  push psw
+0719+  D250             ;  call PRHEX
+0720+  D250             ;  pop psw
+0721+  D250              ;===========================
+0722+  D250 C9            RET
+0723+  D251             #endif ;end #ifdef SD_HWM_PVV
+0724+  D251             
+0725+  D251             
+0726+  D251 21 00 00    SD_CMD: LXI H,0
+0727+  D254 11 00 00    SD_CMDW:LXI D,0
+0728+  D257 CD 3E D2    SD_CMDD:CALL SD_FIN
+0729+  D25A 79            MOV A,C
+0730+  D25B F5            push psw
+0731+  D25C CD 40 D2      CALL SD_PUT
+0732+  D25F 7A            MOV A,D
+0733+  D260 CD 40 D2      CALL SD_PUT
+0734+  D263 7B            MOV A,E
+0735+  D264 CD 40 D2      CALL SD_PUT
+0736+  D267 7C            MOV A,H
+0737+  D268 CD 40 D2      CALL SD_PUT
+0738+  D26B 7D            MOV A,L
+0739+  D26C CD 40 D2      CALL SD_PUT
+0740+  D26F F1            pop psw
+0741+  D270 FE 48         cpi CMD8
+0742+  D272 3E 87         mvi A,87h
+0743+  D274 CA 79 D2      jz putCRC
+0744+  D277 3E 95         MVI A,95h
+0745+  D279             putCRC:
+0746+  D279 CD 40 D2      CALL SD_PUT
+0747+  D27C 11 80 80      LXI D,8080h
+0748+  D27F 21 20 4E    SD_WAIT:LXI H,20000
+0749+  D282 CD 48 D2    SDW_L1: CALL SD_GET
+0750+  D285 4F            MOV C,A    ; ld    C,A
+0751+  D286 92            SUB D      ; sub   D 
+0752+  D287 BB            CMP E      ; cp    E
+0753+  D288 79            MOV A,C    ; ld    A,C
+0754+  D289 D0            RNC        ; ret   nc 
+0755+  D28A 2B            DCX H      ; dec   hl
+0756+  D28B 7C            MOV A,H    ; ld    A,H
+0757+  D28C B5            ORA L      ; or    L
+0758+  D28D C2 82 D2      JNZ SDW_L1 ; jp    nz,SDW_L1
+0759+  D290 D6 01         SUI 1      ; sub   1
+0760+  D292 C9            RET
+0761+  D293                    
+0762+  D293             SD_INIT:
+0763+  D293~            #ifdef UT88_WW55_SD_n8vem
+0764+  D293~              CALL SD_OFF
+0765+  D293~              MVI B,0f0h
+0766+  D293~            ;  LXI H,SD_PORTC  ; ld  hl, SD_ADDR 
+0767+  D293~            LI3:                  ;
+0768+  D293~              mvi A,SD_PWR+SD_CS+SD_DOUT
+0769+  D293~              out SD_PORTC        ; ld  (hl), a   ; clock is low
+0770+  D293~              ori SD_CLK          ; or  SD_CLK
+0771+  D293~              out SD_PORTC        ; ld  (hl), a   ; rising clock edge
+0772+  D293~              dcr B               ; djnz  L3
+0773+  D293~              jnz LI3
+0774+  D293~              xri SD_CLK          ; xor SD_CLK    ; and NOT SD_CLK
+0775+  D293~              out SD_PORTC        ; ld  (hl), a   ; leave with clock low
+0776+  D293             #endif
+0777+  D293             
+0778+  D293~            #ifdef GAL_AY_SD_n8vem
+0779+  D293~              CALL SD_OFF
+0780+  D293~              MVI B,0f0h
+0781+  D293~              MVI A,AY_PORTB
+0782+  D293~              out SD_AY_PORT
+0783+  D293~            LI3:                  ;
+0784+  D293~              mvi A,SD_PWR+SD_CS+SD_DOUT
+0785+  D293~              out SD_AY_PORT+1    ;  mov M,A      ; ld  (hl), a   ; clock is low
+0786+  D293~              ori SD_CLK          ;               ; or  SD_CLK
+0787+  D293~              out SD_AY_PORT+1    ;  mov M,A      ; ld  (hl), a   ; rising clock edge
+0788+  D293~              dcr B               ;               ; djnz  L3
+0789+  D293~              jnz LI3
+0790+  D293~              xri SD_CLK          ; xor SD_CLK    ; and NOT SD_CLK
+0791+  D293~              out SD_AY_PORT+1    ;  mov M,A      ; ld  (hl), a   ; leave with clock low
+0792+  D293             #endif
+0793+  D293             
+0794+  D293~            #ifdef RK86_WW55_SD_n8vem
+0795+  D293~              CALL SD_OFF
+0796+  D293~              MVI B,80h
+0797+  D293~              LXI H,SD_PORTC      ; ld  hl, SD_ADDR 
+0798+  D293~            LI3:                  ;
+0799+  D293~              mvi A,SD_PWR+SD_CS+SD_DOUT
+0800+  D293~              mov M,A             ; ld  (hl), a   ; clock is low
+0801+  D293~              ori SD_CLK          ; or  SD_CLK
+0802+  D293~              mov M,A             ; ld  (hl), a   ; rising clock edge
+0803+  D293~              dcr B               ; djnz  L3
+0804+  D293~              jnz LI3
+0805+  D293~              xri SD_CLK          ; xor SD_CLK    ; and NOT SD_CLK
+0806+  D293~              mov M,A             ; ld  (hl), a   ; leave with clock low
+0807+  D293             #endif
+0808+  D293             
+0809+  D293~            #ifdef STD_WW55_SD_n8vem
+0810+  D293~              CALL SD_OFF
+0811+  D293~              MVI B,80h
+0812+  D293~              LXI H,SD_PORTC      ; ld  hl, SD_ADDR 
+0813+  D293~            LI3:                  ;
+0814+  D293~              mvi A,SD_PWR+SD_CS+SD_DOUT
+0815+  D293~              mov M,A             ; ld  (hl), a   ; clock is low
+0816+  D293~              ori SD_CLK          ; or  SD_CLK
+0817+  D293~              mov M,A             ; ld  (hl), a   ; rising clock edge
+0818+  D293~              dcr B               ; djnz  L3
+0819+  D293~              jnz LI3
+0820+  D293~              xri SD_CLK          ; xor SD_CLK    ; and NOT SD_CLK
+0821+  D293~              mov M,A             ; ld  (hl), a   ; leave with clock low
+0822+  D293             #endif
+0823+  D293             
+0824+  D293~            #ifdef SD_n8vem
+0825+  D293~              MVI B,80h
+0826+  D293~              LXI H,SD_DATA_PORT  ; ld  hl, SD_ADDR 
+0827+  D293~            LI3:                  ;
+0828+  D293~              mvi A,SD_PWR
+0829+  D293~              mov M,A             ; ld  (hl), a   ; clock is low
+0830+  D293~              ori SD_CLK          ; or  SD_CLK
+0831+  D293~              mov M,A             ; ld  (hl), a   ; rising clock edge
+0832+  D293~              dcr B               ; djnz  L3
+0833+  D293~              jnz LI3
+0834+  D293~              xri SD_CLK          ; xor SD_CLK    ; and NOT SD_CLK
+0835+  D293~              mov M,A             ; ld  (hl), a   ; leave with clock low
+0836+  D293             #endif
+0837+  D293             
+0838+  D293~            #ifdef SD_msx
+0839+  D293~              CALL SD_OFF
+0840+  D293~              MVI B,10h
+0841+  D293~              CALL SD_FIN
+0842+  D293~              DCR B
+0843+  D293~              JNZ $-4
+0844+  D293             #endif
+0845+  D293             
+0846+  D293             #ifdef SD_HWM_PVV
+0847+  D293 CD 38 D2      CALL SD_OFF
+0848+  D296 06 10         MVI B,10h
+0849+  D298 CD 3E D2      CALL SD_FIN
+0850+  D29B 05            DCR B
+0851+  D29C C2 98 D2      JNZ $-4
+0852+  D29F             #endif
+0853+  D29F             
+0854+  D29F~            #ifdef SD_RK86_WW55_SD_HWM_PVV
+0855+  D29F~              CALL SD_OFF
+0856+  D29F~              MVI B,10h
+0857+  D29F~              CALL SD_FIN
+0858+  D29F~              DCR B
+0859+  D29F~              JNZ $-4
+0860+  D29F             #endif
+0861+  D29F             
+0862+  D29F CD 33 D2      CALL SD_ON
+0863+  D2A2 0E 40         MVI C,CMD0
+0864+  D2A4 CD 51 D2      CALL SD_CMD
+0865+  D2A7 FE 01         CPI 1
+0866+  D2A9 C0            RNZ
+0867+  D2AA 21 AA 01      LXI H,01AAh
+0868+  D2AD 0E 48         MVI C,CMD8
+0869+  D2AF CD 54 D2      CALL SD_CMDW
+0870+  D2B2 FE 01         CPI 01h
+0871+  D2B4 CA D3 D2      jz SD_V2
+0872+  D2B7             SD_V1:
+0873+  D2B7 0E 41         MVI C,041h
+0874+  D2B9 CD 51 D2      CALL SD_CMD
+0875+  D2BC E6 FE         ANI 0FEh     ; and   #FE
+0876+  D2BE C0            RNZ          ; ret   nz
+0877+  D2BF 0E 41         MVI C,041h
+0878+  D2C1 CD 51 D2      CALL SD_CMD
+0879+  D2C4 FE 01         CPI 1       ; cp    1
+0880+  D2C6 CA B7 D2      jz SD_V1
+0881+  D2C9             ;=============================================
+0882+  D2C9             #ifdef SD_DBG_PRINT1
+0883+  D2C9 F5            push PSW
+0884+  D2CA 21 44 D3      LXI H,SD_0
+0885+  D2CD CD 18 C8      CALL PRINT
+0886+  D2D0 F1            pop PSW
+0887+  D2D1             #endif
+0888+  D2D1             ;=============================================
+0889+  D2D1 B7            ora A
+0890+  D2D2 C9            ret
+0891+  D2D3             SD_V2:
+0892+  D2D3 CD 48 D2      call SD_GET  ;read cmd8 answer
+0893+  D2D6 CD 48 D2      call SD_GET
+0894+  D2D9 CD 48 D2      call SD_GET
+0895+  D2DC CD 48 D2      call SD_GET
+0896+  D2DF FE AA         CPI 0AAh
+0897+  D2E1 C2 B7 D2      jnz SD_V1 ;if here, answer must be (0x01,0x00,0x00,0x01,0xAA) if not check SD_V1
+0898+  D2E4             SDI_L1:
+0899+  D2E4 0E 77         MVI C,CMD55
+0900+  D2E6 CD 51 D2      CALL SD_CMD
+0901+  D2E9 E6 FE         ANI 0FEh     ; and   #FE
+0902+  D2EB C0            RNZ          ; ret   nz
+0903+  D2EC 21 00 00      LXI H,0000h
+0904+  D2EF 11 00 40      LXI D,4000h
+0905+  D2F2 0E 69         MVI C,ACMD41 ; ld    C,ACMD41
+0906+  D2F4 CD 57 D2      CALL SD_CMDD
+0907+  D2F7 FE 01         CPI 1       ; cp    1
+0908+  D2F9 CA E4 D2      JZ SDI_L1   ; jp    z,SDI_L1
+0909+  D2FC 0E 7A         MVI C,CMD58
+0910+  D2FE CD 51 D2      CALL SD_CMD
+0911+  D301 CD 48 D2      CALL SD_GET
+0912+  D304 E6 40         ANI 040h       ; cp
+0913+  D306 C2 24 D3      jnz SD_V2P
+0914+  D309             ;=============================================
+0915+  D309             #ifdef SD_DBG_PRINT1
+0916+  D309 E5            push H
+0917+  D30A 21 4B D3      LXI H,SD_1
+0918+  D30D CD 18 C8      CALL PRINT
+0919+  D310 E1            pop H
+0920+  D311             #endif
+0921+  D311             ;=============================================
+0922+  D311 CD 48 D2      CALL SD_GET
+0923+  D314 CD 48 D2      CALL SD_GET
+0924+  D317 CD 48 D2      CALL SD_GET
+0925+  D31A             SD_V2M:
+0926+  D31A 21 00 02      LXI H,0200h
+0927+  D31D 0E 50         MVI C,CMD16
+0928+  D31F CD 54 D2      CALL SD_CMDW
+0929+  D322 B7            ORA A       ; or    A
+0930+  D323 C9            RET
+0931+  D324             SD_V2P:
+0932+  D324 CD 48 D2      CALL SD_GET
+0933+  D327 CD 48 D2      CALL SD_GET
+0934+  D32A CD 48 D2      CALL SD_GET
+0935+  D32D             ;=============================================
+0936+  D32D             #ifdef SD_DBG_PRINT1
+0937+  D32D E5            push H
+0938+  D32E 21 52 D3      LXI H,SD_2
+0939+  D331 CD 18 C8      CALL PRINT
+0940+  D334 E1            pop H
+0941+  D335             #endif
+0942+  D335             ;=============================================
+0943+  D335 3E FF         mvi A,0ffh
+0944+  D337 32 62 DE      STA SDTYPE
+0945+  D33A             
+0946+  D33A 21 00 02      LXI H,0200h
+0947+  D33D 0E 50         MVI C,CMD16
+0948+  D33F CD 54 D2      CALL SD_CMDW
+0949+  D342 B7            ORA A       ; or    A
+0950+  D343 C9            RET
+0951+  D344             
+0952+  D344             #ifdef SD_DBG_PRINT1
+0953+  D344 53 44 56 31 SD_0: DB "SDV1",0DH,0ah,0
+0953+  D348 0D 0A 00 
+0954+  D34B 53 44 56 32 SD_1: DB "SDV2",0DH,0ah,0
+0954+  D34F 0D 0A 00 
+0955+  D352 53 44 56 32 SD_2: DB "SDV2+",0DH,0ah,0
+0955+  D356 2B 0D 0A 00 
+0956+  D35A             #endif
+0957+  D35A             
+0958+  D35A             SD_RWR:
+0959+  D35A D5            PUSH D
+0960+  D35B C5            PUSH B
+0961+  D35C 11 FF 00      LXI D,0FFh
+0962+  D35F CD 7F D2      CALL SD_WAIT
+0963+  D362 C1            POP B
+0964+  D363 E1            POP H
+0965+  D364 D8            RC  ;  JC POPHRET
+0966+  D365 3A 62 DE      LDA SDTYPE
+0967+  D368 FE 00         CPI 00h
+0968+  D36A CA 73 D3      JZ SD_RWR0
+0969+  D36D 59            mov E,C
+0970+  D36E 16 00         MVI D,0 ;SDHC...
+0971+  D370 37            stc
+0972+  D371 3F            cmc
+0973+  D372 C9            ret
+0974+  D373             SD_RWR0:
+0975+  D373 79            MOV A,C
+0976+  D374 29            DAD H
+0977+  D375 8F            ADC A
+0978+  D376 57            MOV D,A
+0979+  D377 5C            MOV E,H
+0980+  D378 65            MOV H,L
+0981+  D379 2E 00         MVI L,0
+0982+  D37B C9            RET
+0983+  D37C             
+0984+  D37C             SD_READ:
+0985+  D37C E5            PUSH H
+0986+  D37D CD 5A D3      call SD_RWR
+0987+  D380 DA 46 D2      JC POPHRET
+0988+  D383 0E 51         MVI C,CMD17
+0989+  D385 CD 57 D2      CALL SD_CMDD
+0990+  D388 DA 46 D2      JC POPHRET
+0991+  D38B 11 01 FF      LXI D,0FF01h
+0992+  D38E CD 7F D2      CALL SD_WAIT
+0993+  D391 E1            POP H
+0994+  D392 FE FE         CPI 0FEh
+0995+  D394 C0            RNZ
+0996+  D395 06 00         MVI B,0
+0997+  D397 CD 48 D2    SDR_L1: CALL SD_GET
+0998+  D39A 77            MOV M,A
+0999+  D39B 23            INX H
+1000+  D39C CD 48 D2      CALL SD_GET
+1001+  D39F 77            MOV M,A
+1002+  D3A0 23            INX H
+1003+  D3A1 05            DCR B
+1004+  D3A2 C2 97 D3      JNZ SDR_L1
+1005+  D3A5             #ifndef SD_msx
+1006+  D3A5 CD 3E D2      CALL SD_FIN ; добиваем еще два пустых байта CRC - new in 8.6
+1007+  D3A8 CD 3E D2      CALL SD_FIN
+1008+  D3AB~            #else
+1009+  D3AB~              CALL SD_GET
+1010+  D3AB~              CALL SD_GET
+1011+  D3AB             #endif
+1012+  D3AB C9            RET
+1013+  D3AC             
+1014+  D3AC~            #ifdef RWR ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+1015+  D3AC~            SD_WRITE:
+1016+  D3AC~              PUSH H
+1017+  D3AC~              call SD_RWR
+1018+  D3AC~              JC POPHRET
+1019+  D3AC~              MVI C,CMD24 ;запись блока в 512 байт
+1020+  D3AC~              CALL SD_CMDD
+1021+  D3AC~              JC POPHRET
+1022+  D3AC~              POP H
+1023+  D3AC~              MVI A,0FEh ; отправляем подтверждение
+1024+  D3AC~              CALL SD_PUT
+1025+  D3AC~              MVI B,0
+1026+  D3AC~            SDR_WL1: ;отправляем 512 байт
+1027+  D3AC~              MOV A,M
+1028+  D3AC~              INX H
+1029+  D3AC~              CALL SD_PUT
+1030+  D3AC~              MOV A,M
+1031+  D3AC~              INX H
+1032+  D3AC~              CALL SD_PUT
+1033+  D3AC~              DCR B
+1034+  D3AC~              JNZ SDR_WL1
+1035+  D3AC~            #ifndef SD_msx
+1036+  D3AC~              CALL SD_FIN ; добиваем еще два пустых байта
+1037+  D3AC~              CALL SD_FIN
+1038+  D3AC~            #else
+1039+  D3AC~              XRA A
+1040+  D3AC~              CALL SD_PUT ; добиваем еще два пустых байта
+1041+  D3AC~              CALL SD_PUT
+1042+  D3AC~            #endif
+1043+  D3AC~            #ifdef SD_msx
+1044+  D3AC~              ora A
+1045+  D3AC~            #endif
+1046+  D3AC~            #ifdef SD_n8vem
+1047+  D3AC~              ora A
+1048+  D3AC~            #endif
+1049+  D3AC~            #ifdef RK86_WW55_SD_n8vem
+1050+  D3AC~              ora A
+1051+  D3AC~            #endif
+1052+  D3AC~            #ifdef STD_WW55_SD_n8vem
+1053+  D3AC~              ora A
+1054+  D3AC~            #endif
+1055+  D3AC~            #ifdef GAL_AY_SD_n8vem
+1056+  D3AC~              ora A
+1057+  D3AC~            #endif
+1058+  D3AC~              RET
+1059+  D3AC             #endif ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0524   D3AC             #include "fs_proc.inc"
+0001+  D3AC             ; DOS
+0002+  D3AC             
+0003+  D3AC 21 36 D9    CHKFAT: LXI H,BUF+36H
+0004+  D3AF 7E            MOV A,M
+0005+  D3B0 23            INX H
+0006+  D3B1 FE 46         CPI 'F'
+0007+  D3B3 C0            RNZ
+0008+  D3B4 7E            MOV A,M
+0009+  D3B5 23            INX H
+0010+  D3B6 FE 41         CPI 'A'
+0011+  D3B8 C0            RNZ
+0012+  D3B9 7E            MOV A,M
+0013+  D3BA FE 54         CPI 'T'
+0014+  D3BC C9            RET
+0015+  D3BD             
+0016+  D3BD AF          ADDW2D: XRA A
+0017+  D3BE CD C1 D3      CALL $+3
+0018+  D3C1 CD C4 D3      CALL $+3
+0019+  D3C4 0A            LDAX B
+0020+  D3C5 8D            ADC L
+0021+  D3C6 12            STAX D
+0022+  D3C7 6C            MOV L,H
+0023+  D3C8 26 00         MVI H,0
+0024+  D3CA 03            INX B
+0025+  D3CB 13            INX D
+0026+  D3CC C9            RET
+0027+  D3CD             
+0028+  D3CD 5E          LD_D: MOV E,M
+0029+  D3CE 23            INX H
+0030+  D3CF 56            MOV D,M
+0031+  D3D0 23            INX H
+0032+  D3D1 4E            MOV C,M
+0033+  D3D2 23            INX H
+0034+  D3D3 46            MOV B,M
+0035+  D3D4 C9            RET
+0036+  D3D5             
+0037+  D3D5 7E          ADD_D:  MOV A,M
+0038+  D3D6 83            ADD E
+0039+  D3D7 77            MOV M,A
+0040+  D3D8 23            INX H
+0041+  D3D9 7E            MOV A,M
+0042+  D3DA 8A            ADC D
+0043+  D3DB 77            MOV M,A
+0044+  D3DC 23            INX H
+0045+  D3DD 7E            MOV A,M
+0046+  D3DE 89            ADC C
+0047+  D3DF 77            MOV M,A
+0048+  D3E0 23            INX H
+0049+  D3E1 7E            MOV A,M
+0050+  D3E2 88            ADC B
+0051+  D3E3 77            MOV M,A
+0052+  D3E4 C9            RET
+0053+  D3E5             
+0054+  D3E5 7E          ADD_DR: MOV A,M
+0055+  D3E6 83            ADD E
+0056+  D3E7 5F            MOV E,A
+0057+  D3E8 23            INX H
+0058+  D3E9 7E            MOV A,M
+0059+  D3EA 8A            ADC D
+0060+  D3EB 57            MOV D,A
+0061+  D3EC 23            INX H
+0062+  D3ED 7E            MOV A,M
+0063+  D3EE 89            ADC C
+0064+  D3EF 4F            MOV C,A
+0065+  D3F0 23            INX H
+0066+  D3F1 7E            MOV A,M
+0067+  D3F2 88            ADC B
+0068+  D3F3 47            MOV B,A
+0069+  D3F4 C9            RET
+0070+  D3F5             
+0071+  D3F5 7B          SHL_D:  MOV A,E
+0072+  D3F6 87            ADD A
+0073+  D3F7 5F            MOV E,A
+0074+  D3F8 7A            MOV A,D
+0075+  D3F9 8F            ADC A
+0076+  D3FA 57            MOV D,A
+0077+  D3FB 79            MOV A,C
+0078+  D3FC 8F            ADC A     ; <- PVV change from ADD A !!!!
+0079+  D3FD 4F            MOV C,A
+0080+  D3FE 78            MOV A,B
+0081+  D3FF 8F            ADC A
+0082+  D400 47            MOV B,A
+0083+  D401 C9            RET
+0084+  D402             
+0085+  D402 CD 05 D4    MULDB:  CALL $+3 ;(HL)+=A*DE and (HL)+=A*BC
+0086+  D405 CD 08 D4      CALL $+3
+0087+  D408 CD 0B D4      CALL $+3
+0088+  D40B 0F            RRC
+0089+  D40C F5            PUSH PSW
+0090+  D40D D2 15 D4      JNC MULDB1
+0091+  D410 E5            PUSH H
+0092+  D411 CD D5 D3      CALL ADD_D
+0093+  D414 E1            POP H
+0094+  D415 CD F5 D3    MULDB1: CALL SHL_D
+0095+  D418 F1            POP PSW
+0096+  D419 C9            RET
+0097+  D41A             
+0098+  D41A CD 1F D4    INCD: CALL INCW
+0099+  D41D C0            RNZ
+0100+  D41E 23            INX H
+0101+  D41F 34          INCW: INR M
+0102+  D420 C0            RNZ
+0103+  D421 23            INX H
+0104+  D422 34            INR M
+0105+  D423 C9            RET
+0106+  D424             
+0107+  D424 1C          INCDR:  INR E
+0108+  D425 C0            RNZ
+0109+  D426 14            INR D
+0110+  D427 C0            RNZ
+0111+  D428 0C            INR C
+0112+  D429 C0            RNZ
+0113+  D42A 04            INR B
+0114+  D42B C9            RET
+0115+  D42C             
+0116+  D42C 13          CMPD: INX D
+0117+  D42D 13            INX D
+0118+  D42E 13            INX D
+0119+  D42F 23                  INX H
+0120+  D430 23            INX H
+0121+  D431 23            INX H
+0122+  D432 CD 38 D4      CALL $+6
+0123+  D435 C0            RNZ
+0124+  D436 1B            DCX D
+0125+  D437 2B            DCX H
+0126+  D438 1A            LDAX D
+0127+  D439 96            SUB M
+0128+  D43A C0            RNZ
+0129+  D43B 1B            DCX D
+0130+  D43C 2B            DCX H
+0131+  D43D 1A            LDAX D
+0132+  D43E 96            SUB M
+0133+  D43F C9            RET
+0134+  D440             
+0135+  D440 7E          CMPD0:  MOV A,M
+0136+  D441 23            INX H
+0137+  D442 B6            ORA M
+0138+  D443 23            INX H
+0139+  D444 B6            ORA M
+0140+  D445 23            INX H
+0141+  D446 B6            ORA M
+0142+  D447 C9            RET
+0143+  D448             
+0144+  D448 7D          SUBHB:  MOV A,L
+0145+  D449 91            SUB C
+0146+  D44A 6F            MOV L,A
+0147+  D44B 7C            MOV A,H
+0148+  D44C 98            SBB B
+0149+  D44D 67            MOV H,A
+0150+  D44E C9            RET
+0151+  D44F             
+0152+  D44F 01 04 00    COPY4:  LXI B,4
+0153+  D452 79          COPY: MOV A,C
+0154+  D453 B7            ORA A
+0155+  D454 CA 58 D4      JZ COPY1
+0156+  D457 04            INR B
+0157+  D458 1A          COPY1:  LDAX D
+0158+  D459 77            MOV M,A
+0159+  D45A 13            INX D
+0160+  D45B 23            INX H
+0161+  D45C 0D            DCR C
+0162+  D45D C2 58 D4      JNZ COPY1
+0163+  D460 05            DCR B
+0164+  D461 C2 58 D4      JNZ COPY1
+0165+  D464 C9            RET
+0166+  D465             
+0167+  D465 1A          STRCMP: LDAX D
+0168+  D466 96            SUB M
+0169+  D467 C0            RNZ
+0170+  D468 13            INX D
+0171+  D469 23            INX H
+0172+  D46A 0B            DCX B
+0173+  D46B 78            MOV A,B
+0174+  D46C B1            ORA C
+0175+  D46D C2 65 D4      JNZ STRCMP
+0176+  D470 C9            RET
+0177+  D471             
+0178+  D471 7E          STRCHR: MOV A,M
+0179+  D472 B9            CMP C
+0180+  D473 C8            RZ
+0181+  D474 B7            ORA A
+0182+  D475 37            STC
+0183+  D476 C8            RZ
+0184+  D477 23            INX H
+0185+  D478 C3 71 D4      JMP STRCHR
+0186+  D47B             
+0187+  D47B 1A          STRCPY: LDAX D
+0188+  D47C 77            MOV M,A
+0189+  D47D B7            ORA A
+0190+  D47E C8            RZ
+0191+  D47F 13            INX D
+0192+  D480 23            INX H
+0193+  D481 C3 7B D4      JMP STRCPY
+0194+  D484               
+0195+  D484 1A          STRMSLD:LDAX D
+0196+  D485 FE 61         CPI 'a'
+0197+  D487 D8            RC
+0198+  D488 FE 7B         CPI 'z'+1
+0199+  D48A D0            RNC
+0200+  D48B E6 DF         ANI 0DFH
+0201+  D48D C9            RET
+0202+  D48E             
+0203+  D48E 0E 0B       STRMASK:MVI C,11
+0204+  D490 CD 84 D4    STRMS1: CALL STRMSLD
+0205+  D493 B7            ORA A
+0206+  D494 CA BE D4      JZ STRMS5
+0207+  D497 FE 2E         CPI '.'
+0208+  D499 CA AF D4      JZ STRMS4
+0209+  D49C FE 2A         CPI '*'
+0210+  D49E CA C8 D4      JZ STRMS6
+0211+  D4A1 FE 3F         CPI '?'
+0212+  D4A3 CA A8 D4      JZ STRMS3
+0213+  D4A6 BE          STRMS2: CMP M
+0214+  D4A7 C0            RNZ
+0215+  D4A8 13          STRMS3: INX D
+0216+  D4A9 23            INX H
+0217+  D4AA 0D            DCR C
+0218+  D4AB C2 90 D4      JNZ STRMS1
+0219+  D4AE C9            RET
+0220+  D4AF 79          STRMS4: MOV A,C
+0221+  D4B0 FE 0B         CPI 11
+0222+  D4B2 CA F3 D4      JZ STRMS9
+0223+  D4B5 FE 04         CPI 4
+0224+  D4B7 DA C4 D4      JC STRMS5a
+0225+  D4BA C2 BE D4      JNZ STRMS5
+0226+  D4BD 13            INX D
+0227+  D4BE 3E 20       STRMS5: MVI A,20H
+0228+  D4C0 1B            DCX D
+0229+  D4C1 C3 A6 D4      JMP STRMS2
+0230+  D4C4 13          STRMS5a:INX D
+0231+  D4C5 C3 90 D4      JMP STRMS1
+0232+  D4C8 13          STRMS6: INX D
+0233+  D4C9 CD 84 D4      CALL STRMSLD
+0234+  D4CC B7            ORA A
+0235+  D4CD C8            RZ
+0236+  D4CE 06 10         MVI B,10H
+0237+  D4D0 FE 2E         CPI '.'
+0238+  D4D2 C2 DB D4      JNZ STRMS7
+0239+  D4D5 79            MOV A,C
+0240+  D4D6 D6 02         SUI 2
+0241+  D4D8 47            MOV B,A
+0242+  D4D9 3E 20         MVI A,20H
+0243+  D4DB 05          STRMS7: DCR B
+0244+  D4DC CA C4 D4      JZ STRMS5a
+0245+  D4DF BE            CMP M
+0246+  D4E0 CA EA D4      JZ STRMS8
+0247+  D4E3 23            INX H
+0248+  D4E4 0D            DCR C
+0249+  D4E5 C2 DB D4      JNZ STRMS7
+0250+  D4E8 B7            ORA A
+0251+  D4E9 C9            RET
+0252+  D4EA 1A          STRMS8: LDAX D
+0253+  D4EB FE 2E         CPI '.'
+0254+  D4ED CA 90 D4      JZ STRMS1
+0255+  D4F0 C3 A8 D4      JMP STRMS3
+0256+  D4F3 1A          STRMS9: LDAX D
+0257+  D4F4 B7            ORA A
+0258+  D4F5 C2 FB D4      JNZ $+6
+0259+  D4F8 1B            DCX D
+0260+  D4F9 3E 20         MVI A,20H
+0261+  D4FB BE            CMP M
+0262+  D4FC C0            RNZ
+0263+  D4FD 13            INX D
+0264+  D4FE 23            INX H
+0265+  D4FF 0D            DCR C
+0266+  D500 C2 F3 D4      JNZ STRMS9
+0267+  D503 1A            LDAX D
+0268+  D504 B7            ORA A
+0269+  D505 C9            RET
+0270+  D506             
+0271+  D506 21 14 DE    FS_RDBC:LXI H,BUFSEC
+0272+  D509 7E            MOV A,M
+0273+  D50A BB            CMP E
+0274+  D50B C2 18 D5      JNZ FS_RDBF
+0275+  D50E 23            INX H
+0276+  D50F 7E            MOV A,M
+0277+  D510 BA            CMP D
+0278+  D511 C2 18 D5      JNZ FS_RDBF
+0279+  D514 23            INX H
+0280+  D515 7E            MOV A,M
+0281+  D516 B9            CMP C
+0282+  D517 C8            RZ
+0283+  D518 21 14 DE    FS_RDBF:LXI H,BUFSEC
+0284+  D51B 73            MOV M,E
+0285+  D51C 23            INX H
+0286+  D51D 72            MOV M,D
+0287+  D51E 23            INX H
+0288+  D51F 71            MOV M,C
+0289+  D520 21 00 D9      LXI H,BUF
+0290+  D523 C3 7C D3      JMP SD_READ
+0291+  D526             
+0292+  D526             ;=============================================
+0293+  D526             #ifdef SD_DBG_PRINT2
+0294+  D526             
+0295+  D526             DBGP_F16:
+0296+  D526 F5            push psw
+0297+  D527             ;  push H
+0298+  D527 21 2F D5      LXI H,SD_F16
+0299+  D52A CD 18 C8      CALL PRINT
+0300+  D52D             ;  pop H
+0301+  D52D F1            pop psw
+0302+  D52E C9            ret
+0303+  D52F 31 36 0A 00 SD_F16: DB "16",0ah,0
+0304+  D533             
+0305+  D533~            #ifdef FAT12_ON
+0306+  D533~            DBGP_F32:
+0307+  D533~              push psw
+0308+  D533~            ;  push H
+0309+  D533~              LXI H,SD_F32
+0310+  D533~              CALL PRINT
+0311+  D533~            ;  pop H
+0312+  D533~              pop psw
+0313+  D533~              ret
+0314+  D533~            SD_F32: DB "32",0ah,0
+0315+  D533~            
+0316+  D533~            DBGP_F12:
+0317+  D533~            ;  push psw
+0318+  D533~            ;  push H
+0319+  D533~              LXI H,SD_F12
+0320+  D533~              CALL PRINT
+0321+  D533~            ;  pop H
+0322+  D533~            ;  pop psw
+0323+  D533~              ret
+0324+  D533~            SD_F12: DB "12",0ah,0
+0325+  D533             #endif
+0326+  D533             #endif
+0327+  D533             #ifdef SD_DBG_PRINT2
+0328+  D533 46 41 54 00 SD_FAT: DB "FAT",0
+0329+  D537             #endif
+0330+  D537             
+0331+  D537             ;=============================================
+0332+  D537             
+0333+  D537 CD 93 D2    FS_RST: CALL SD_INIT
+0334+  D53A 37            STC
+0335+  D53B C0            RNZ
+0336+  D53C 11 00 00      LXI D,0
+0337+  D53F 4B            MOV C,E
+0338+  D540 CD 18 D5      CALL FS_RDBF
+0339+  D543 D8            RC
+0340+  D544 CD 54 D5      CALL FSRST1
+0341+  D547 D0            RNC
+0342+  D548 2A C6 DA      LHLD BUF+1C6H
+0343+  D54B EB            XCHG
+0344+  D54C 3A C8 DA      LDA BUF+1C8H
+0345+  D54F 4F            MOV C,A
+0346+  D550 CD 18 D5      CALL FS_RDBF
+0347+  D553 D8            RC
+0348+  D554 CD AC D3    FSRST1: CALL CHKFAT
+0349+  D557 37            STC
+0350+  D558 C0            RNZ
+0351+  D559             ;=============================================
+0352+  D559             #ifdef SD_DBG_PRINT2
+0353+  D559             ;  push H
+0354+  D559 21 33 D5      LXI H,SD_FAT
+0355+  D55C CD 18 C8      CALL PRINT
+0356+  D55F             ;  pop H
+0357+  D55F             #endif
+0358+  D55F             ;=============================================
+0359+  D55F             
+0360+  D55F 2A 0E D9      LHLD BUF+0EH
+0361+  D562 01 1C D9      LXI B,BUF+1CH
+0362+  D565 11 00 DE      LXI D,FATSEC
+0363+  D568 CD BD D3      CALL ADDW2D
+0364+  D56B 2A 16 D9      LHLD BUF+16H
+0365+  D56E EB            XCHG
+0366+  D56F 2A 0E D9      LHLD BUF+0EH
+0367+  D572 3A 10 D9      LDA BUF+10H
+0368+  D575 19            DAD D
+0369+  D576 3D            DCR A
+0370+  D577 C2 75 D5      JNZ $-2
+0371+  D57A 01 1C D9      LXI B,BUF+1CH
+0372+  D57D 11 04 DE      LXI D,ROOTSEC
+0373+  D580 CD BD D3      CALL ADDW2D
+0374+  D583 2A 11 D9      LHLD BUF+11H
+0375+  D586 22 0C DE      SHLD ROOTLEN
+0376+  D589 29            DAD H
+0377+  D58A 8F            ADC A
+0378+  D58B 29            DAD H
+0379+  D58C 8F            ADC A
+0380+  D58D 29            DAD H
+0381+  D58E 8F            ADC A
+0382+  D58F 29            DAD H
+0383+  D590 8F            ADC A
+0384+  D591 6C            MOV L,H
+0385+  D592 67            MOV H,A
+0386+  D593 22 0E DE      SHLD ROOTLNS
+0387+  D596 01 04 DE      LXI B,ROOTSEC
+0388+  D599 11 08 DE      LXI D,DATASEC
+0389+  D59C CD BD D3      CALL ADDW2D
+0390+  D59F 3A 0D D9      LDA BUF+0DH
+0391+  D5A2 32 10 DE      STA SECINBL
+0392+  D5A5 3E C3         MVI A,0C3H
+0393+  D5A7 32 11 DE      STA FAT_NXT
+0394+  D5AA~            #ifdef FAT12_ON
+0395+  D5AA~              LDA BUF+39H
+0396+  D5AA~              CPI '3'
+0397+  D5AA~            ;=============================================[
+0398+  D5AA~            #ifdef SD_DBG_PRINT2
+0399+  D5AA~              CZ DBGP_F32
+0400+  D5AA~            #endif
+0401+  D5AA~            ;=============================================]
+0402+  D5AA~              LXI H,FAT_N32
+0403+  D5AA~              JZ FSRST2
+0404+  D5AA             #endif
+0405+  D5AA 3A 3A D9      LDA BUF+3AH
+0406+  D5AD FE 36         CPI '6'
+0407+  D5AF             ;=============================================[
+0408+  D5AF             #ifdef SD_DBG_PRINT2
+0409+  D5AF CC 26 D5      CZ DBGP_F16
+0410+  D5B2             #endif
+0411+  D5B2             ;=============================================]
+0412+  D5B2 21 C0 D5      LXI H,FAT_N16
+0413+  D5B5~            #ifdef FAT12_ON
+0414+  D5B5~              JZ FSRST2
+0415+  D5B5~            ;=============================================[
+0416+  D5B5~            #ifdef SD_DBG_PRINT2
+0417+  D5B5~              CALL DBGP_F12
+0418+  D5B5~            #endif
+0419+  D5B5~            ;=============================================]
+0420+  D5B5~              LXI H,FAT_N12
+0421+  D5B5             #endif
+0422+  D5B5 22 12 DE    FSRST2: SHLD FAT_NXT+1
+0423+  D5B8~            #ifdef GAL
+0424+  D5B8~              LXI H,2fH
+0425+  D5B8             #else
+0426+  D5B8 21 5C 00      LXI H,5CH
+0427+  D5BB             #endif
+0428+  D5BB 22 00 DD      SHLD CWD
+0429+  D5BE AF            XRA A
+0430+  D5BF C9            RET
+0431+  D5C0             
+0432+  D5C0             FAT_N16:
+0433+  D5C0             #ifdef FAT16_ON
+0434+  D5C0 21 1E DE      LXI H,BNEXT+1
+0435+  D5C3 CD CD D3      CALL LD_D
+0436+  D5C6 21 00 DE      LXI H,FATSEC
+0437+  D5C9 CD E5 D3      CALL ADD_DR
+0438+  D5CC CD 06 D5      CALL FS_RDBC
+0439+  D5CF DA EC D5      JC FAT_EOF
+0440+  D5D2 2A 1D DE      LHLD BNEXT
+0441+  D5D5 26 00         MVI H,0
+0442+  D5D7 29            DAD H
+0443+  D5D8 11 00 D9      LXI D,BUF
+0444+  D5DB 19            DAD D
+0445+  D5DC 5E            MOV E,M
+0446+  D5DD 23            INX H
+0447+  D5DE 56            MOV D,M
+0448+  D5DF 7B            MOV A,E
+0449+  D5E0 F6 07         ORI 7
+0450+  D5E2 A2            ANA D
+0451+  D5E3 3C            INR A
+0452+  D5E4 CA EC D5      JZ FAT_EOF
+0453+  D5E7 EB            XCHG
+0454+  D5E8 22 1D DE      SHLD BNEXT
+0455+  D5EB             #endif
+0456+  D5EB C9            RET
+0457+  D5EC             
+0458+  D5EC             FAT_N12:
+0459+  D5EC~            #ifdef FAT12_ON
+0460+  D5EC~              LHLD BNEXT
+0461+  D5EC~              MOV E,L
+0462+  D5EC~              MOV D,H
+0463+  D5EC~              DAD H
+0464+  D5EC~              DAD D
+0465+  D5EC~              MOV A,H
+0466+  D5EC~              RAR
+0467+  D5EC~              MOV H,A
+0468+  D5EC~              MOV A,L
+0469+  D5EC~              RAR
+0470+  D5EC~              MOV L,A
+0471+  D5EC~              PUSH PSW
+0472+  D5EC~              PUSH H
+0473+  D5EC~              MOV A,H
+0474+  D5EC~              RRC
+0475+  D5EC~              ANI 0FH
+0476+  D5EC~              MOV E,A
+0477+  D5EC~              MVI D,0
+0478+  D5EC~              MOV C,D
+0479+  D5EC~              LXI H,FATSEC
+0480+  D5EC~              CALL ADD_DR
+0481+  D5EC~              CALL FS_RDBC
+0482+  D5EC~              POP H
+0483+  D5EC~              MOV A,H
+0484+  D5EC~              ANI 1
+0485+  D5EC~              MOV H,A
+0486+  D5EC~              SUI 2
+0487+  D5EC~              ANA L
+0488+  D5EC~              LXI D,BUF
+0489+  D5EC~              DAD D
+0490+  D5EC~              MOV E,M
+0491+  D5EC~              INX H
+0492+  D5EC~              MOV D,M
+0493+  D5EC~              INR A
+0494+  D5EC~              JNZ FATN12A
+0495+  D5EC~              PUSH D
+0496+  D5EC~              LXI H,BUFSEC
+0497+  D5EC~              CALL LD_D
+0498+  D5EC~              CALL INCDR
+0499+  D5EC~              CALL FS_RDBC
+0500+  D5EC~              POP D
+0501+  D5EC~              LDA BUF
+0502+  D5EC~              MOV D,A
+0503+  D5EC~            FATN12A:XCHG
+0504+  D5EC~              POP PSW
+0505+  D5EC~              JNC FATN12B
+0506+  D5EC~              XRA A
+0507+  D5EC~              DAD H
+0508+  D5EC~              ADC A
+0509+  D5EC~              DAD H
+0510+  D5EC~              ADC A
+0511+  D5EC~              DAD H
+0512+  D5EC~              ADC A
+0513+  D5EC~              DAD H
+0514+  D5EC~              ADC A
+0515+  D5EC~              MOV L,H
+0516+  D5EC~              MOV H,A
+0517+  D5EC~            FATN12B:MOV A,H
+0518+  D5EC~              ANI 0FH
+0519+  D5EC~              MOV H,A
+0520+  D5EC~              RRC
+0521+  D5EC~              RRC
+0522+  D5EC~              RRC
+0523+  D5EC~              RRC
+0524+  D5EC~              ANA L
+0525+  D5EC~              ADI 10H
+0526+  D5EC~              JC FAT_EOF
+0527+  D5EC~              SHLD BNEXT
+0528+  D5EC~              RET
+0529+  D5EC             #endif
+0530+  D5EC             
+0531+  D5EC             FAT_N32:
+0532+  D5EC AF          FAT_EOF:XRA A
+0533+  D5ED 6F            MOV L,A
+0534+  D5EE 67            MOV H,A
+0535+  D5EF 22 1D DE      SHLD BNEXT
+0536+  D5F2 22 1F DE      SHLD BNEXT+2
+0537+  D5F5 C9            RET
+0538+  D5F6             
+0539+  D5F6             FS_RDWR:
+0540+  D5F6 E5             PUSH H
+0541+  D5F7 3A 18 DE      LDA BLKLEN
+0542+  D5FA B7            ORA A
+0543+  D5FB C2 37 D6      JNZ FSRD2
+0544+  D5FE 21 1D DE      LXI H,BNEXT
+0545+  D601 CD 40 D4      CALL CMPD0
+0546+  D604 C2 0A D6      JNZ FSRD1
+0547+  D607 E1            POP H
+0548+  D608 37            STC
+0549+  D609 C9            RET
+0550+  D60A 11 08 DE    FSRD1:  LXI D,DATASEC
+0551+  D60D 21 19 DE      LXI H,BLKSEC
+0552+  D610 CD 4F D4      CALL COPY4
+0553+  D613 01 02 00      LXI B,2
+0554+  D616 21 1D DE      LXI H,BNEXT
+0555+  D619 7E            MOV A,M
+0556+  D61A 91            SUB C
+0557+  D61B 5F            MOV E,A
+0558+  D61C 23            INX H
+0559+  D61D 7E            MOV A,M
+0560+  D61E 98            SBB B
+0561+  D61F 57            MOV D,A
+0562+  D620 23            INX H
+0563+  D621 7E            MOV A,M
+0564+  D622 98            SBB B
+0565+  D623 4F            MOV C,A
+0566+  D624 23            INX H
+0567+  D625 7E            MOV A,M
+0568+  D626 98            SBB B
+0569+  D627 47            MOV B,A
+0570+  D628 3A 10 DE      LDA SECINBL
+0571+  D62B 21 19 DE      LXI H,BLKSEC
+0572+  D62E CD 02 D4      CALL MULDB
+0573+  D631~            #ifdef FAT12_ON
+0574+  D631~              CALL FAT_NXT
+0575+  D631             #else
+0576+  D631 CD C0 D5      call FAT_N16 ; PVV only fat16
+0577+  D634             #endif
+0578+  D634 3A 10 DE      LDA SECINBL
+0579+  D637 3D          FSRD2:  DCR A
+0580+  D638 32 18 DE      STA BLKLEN
+0581+  D63B 21 19 DE      LXI H,BLKSEC
+0582+  D63E 5E            MOV E,M
+0583+  D63F 23            INX H
+0584+  D640 56            MOV D,M
+0585+  D641 23            INX H
+0586+  D642 4E            MOV C,M
+0587+  D643 2B            DCX H
+0588+  D644 2B            DCX H
+0589+  D645 CD 1A D4      CALL INCD
+0590+  D648 E1            POP H
+0591+  D649 C9            RET
+0592+  D64A             
+0593+  D64A CD F6 D5    FS_READ: CALL FS_RDWR
+0594+  D64D C3 7C D3      JMP SD_READ
+0595+  D650             
+0596+  D650~            #ifdef RWR ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0597+  D650~            FS_WRITE: CALL FS_RDWR
+0598+  D650~              JMP SD_WRITE
+0599+  D650             #endif ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0600+  D650             
+0601+  D650 3A 25 DE    FS_NEXT:LDA DIRREC
+0602+  D653 B7            ORA A
+0603+  D654 C2 5F D6      JNZ FSNX1
+0604+  D657 21 00 DB      LXI H,BUFDIR
+0605+  D65A CD 4A D6      CALL FS_READ
+0606+  D65D D8            RC
+0607+  D65E AF            XRA A 
+0608+  D65F 6F          FSNX1:  MOV L,A
+0609+  D660 26 00         MVI H,0
+0610+  D662 3C            INR A
+0611+  D663 FE 10         CPI 10H
+0612+  D665 DA 69 D6      JC $+4
+0613+  D668 AF            XRA A
+0614+  D669 32 25 DE      STA DIRREC
+0615+  D66C 29            DAD H
+0616+  D66D 29            DAD H
+0617+  D66E 29            DAD H
+0618+  D66F 29            DAD H
+0619+  D670 29            DAD H
+0620+  D671 11 00 DB      LXI D,BUFDIR
+0621+  D674 19            DAD D
+0622+  D675 C9            RET
+0623+  D676             
+0624+  D676 D5          FS_FNDF:PUSH D
+0625+  D677 3A 01 DD      LDA CWD+1
+0626+  D67A B7            ORA A
+0627+  D67B C2 90 D6      JNZ FS_FF1
+0628+  D67E CD EC D5      CALL FAT_EOF
+0629+  D681 11 04 DE      LXI D,ROOTSEC
+0630+  D684 21 19 DE      LXI H,BLKSEC
+0631+  D687 CD 4F D4      CALL COPY4
+0632+  D68A 3A 0E DE      LDA ROOTLNS
+0633+  D68D C3 9A D6      JMP FS_FF2
+0634+  D690 11 26 DE    FS_FF1: LXI D,CWDBLK
+0635+  D693 21 1D DE      LXI H,BNEXT
+0636+  D696 CD 4F D4      CALL COPY4
+0637+  D699 AF            XRA A
+0638+  D69A 32 18 DE    FS_FF2: STA BLKLEN
+0639+  D69D AF            XRA A
+0640+  D69E 32 25 DE      STA DIRREC
+0641+  D6A1 D1            POP D
+0642+  D6A2 D5          FS_FNDN:PUSH D
+0643+  D6A3 CD 50 D6      CALL FS_NEXT
+0644+  D6A6 D1            POP D
+0645+  D6A7 D8            RC
+0646+  D6A8 E5            PUSH H
+0647+  D6A9 0E 20         MVI C,20H
+0648+  D6AB AF            XRA A
+0649+  D6AC B6            ORA M
+0650+  D6AD 23            INX H
+0651+  D6AE 0D            DCR C
+0652+  D6AF C2 AC D6      JNZ $-3
+0653+  D6B2 E1            POP H
+0654+  D6B3 B7            ORA A
+0655+  D6B4 37            STC
+0656+  D6B5 C8            RZ
+0657+  D6B6 7E            MOV A,M
+0658+  D6B7 FE E5         CPI 0E5H
+0659+  D6B9 CA A2 D6      JZ FS_FNDN
+0660+  D6BC D5            PUSH D
+0661+  D6BD E5            PUSH H
+0662+  D6BE CD 8E D4      CALL STRMASK
+0663+  D6C1 E1            POP H
+0664+  D6C2 D1            POP D
+0665+  D6C3 C8            RZ
+0666+  D6C4 C3 A2 D6      JMP FS_FNDN
+0667+  D6C7             
+0668+  D6C7 11 14 00    FS_GETB:LXI D,20
+0669+  D6CA 19            DAD D
+0670+  D6CB 4E            MOV C,M
+0671+  D6CC 23            INX H
+0672+  D6CD 46            MOV B,M
+0673+  D6CE 11 05 00      LXI D,5
+0674+  D6D1 19            DAD D
+0675+  D6D2 5E            MOV E,M
+0676+  D6D3 23            INX H
+0677+  D6D4 56            MOV D,M
+0678+  D6D5 C9            RET
+0679+  D6D6             
+0680+  D6D6 1A          FS_CHDIR:LDAX D
+0681+  D6D7~            #ifdef GAL
+0682+  D6D7~              SUI 2fH
+0683+  D6D7             #else
+0684+  D6D7 D6 5C         SUI 5CH
+0685+  D6D9             #endif
+0686+  D6D9             ;  SUI 5CH
+0687+  D6D9 C2 E3 D6      JNZ FS_CD1
+0688+  D6DC 32 01 DD      STA CWD+1
+0689+  D6DF 13            INX D
+0690+  D6E0 1A            LDAX D
+0691+  D6E1 B7            ORA A
+0692+  D6E2 C8            RZ
+0693+  D6E3 D5          FS_CD1: PUSH D
+0694+  D6E4 1A          FS_CD2: LDAX D
+0695+  D6E5 B7            ORA A
+0696+  D6E6 CA F2 D6      JZ FS_CD3
+0697+  D6E9 13            INX D
+0698+  D6EA~            #ifdef GAL
+0699+  D6EA~              SUI 2fH
+0700+  D6EA             #else
+0701+  D6EA D6 5C         SUI 5CH
+0702+  D6EC             #endif
+0703+  D6EC             ;  SUI 5CH
+0704+  D6EC C2 E4 D6      JNZ FS_CD2
+0705+  D6EF 1B            DCX D
+0706+  D6F0 12            STAX D
+0707+  D6F1 13            INX D
+0708+  D6F2 EB          FS_CD3: XCHG
+0709+  D6F3 D1            POP D
+0710+  D6F4 E5            PUSH H
+0711+  D6F5 D5            PUSH D
+0712+  D6F6 CD 76 D6      CALL FS_FNDF
+0713+  D6F9 C1            POP B
+0714+  D6FA DA 09 D7      JC FS_CD4
+0715+  D6FD E5            PUSH H
+0716+  D6FE 11 0B 00      LXI D,11
+0717+  D701 19            DAD D
+0718+  D702 7E            MOV A,M
+0719+  D703 E1            POP H
+0720+  D704 07            RLC
+0721+  D705 07            RLC
+0722+  D706 07            RLC
+0723+  D707 07            RLC
+0724+  D708 3F            CMC
+0725+  D709 D1          FS_CD4: POP D
+0726+  D70A D8            RC
+0727+  D70B D5            PUSH D
+0728+  D70C C5            PUSH B
+0729+  D70D CD C7 D6      CALL FS_GETB
+0730+  D710 21 26 DE      LXI H,CWDBLK
+0731+  D713 73            MOV M,E
+0732+  D714 23            INX H
+0733+  D715 72            MOV M,D
+0734+  D716 23            INX H
+0735+  D717 71            MOV M,C
+0736+  D718 23            INX H
+0737+  D719 70            MOV M,B
+0738+  D71A D1            POP D
+0739+  D71B 21 00 DD      LXI H,CWD
+0740+  D71E 7E            MOV A,M
+0741+  D71F 23            INX H
+0742+  D720 47            MOV B,A
+0743+  D721 7E            MOV A,M
+0744+  D722 B7            ORA A
+0745+  D723 C2 1F D7      JNZ $-4
+0746+  D726 1A            LDAX D
+0747+  D727 FE 2E         CPI '.'
+0748+  D729 C2 42 D7      JNZ FS_CD5
+0749+  D72C 13            INX D
+0750+  D72D 1A            LDAX D
+0751+  D72E FE 2E         CPI '.'
+0752+  D730 C2 4E D7      JNZ FS_CD6
+0753+  D733 2B            DCX H
+0754+  D734 7E            MOV A,M
+0755+  D735 36 00         MVI M,0
+0756+  D737~            #ifdef GAL
+0757+  D737~              CPI 2fH
+0758+  D737             #else
+0759+  D737 FE 5C         CPI 5CH
+0760+  D739             #endif
+0761+  D739             ;  CPI 5CH
+0762+  D739 C2 33 D7      JNZ $-6
+0763+  D73C 32 00 DD      STA CWD
+0764+  D73F C3 4E D7      JMP FS_CD6
+0765+  D742 78          FS_CD5: MOV A,B
+0766+  D743~            #ifdef GAL
+0767+  D743~              CPI 2fH
+0768+  D743             #else
+0769+  D743 FE 5C         CPI 5CH
+0770+  D745             #endif
+0771+  D745             ;  CPI 5CH
+0772+  D745 CA 4B D7      JZ $+6
+0773+  D748~            #ifdef GAL
+0774+  D748~              MVI M,2fH
+0775+  D748             #else
+0776+  D748 36 5C         MVI M,5CH
+0777+  D74A             #endif
+0778+  D74A             ;  MVI M,5CH
+0779+  D74A 23            INX H
+0780+  D74B CD 7B D4      CALL STRCPY
+0781+  D74E D1          FS_CD6: POP D
+0782+  D74F 1A            LDAX D
+0783+  D750 B7            ORA A
+0784+  D751 C2 E3 D6      JNZ FS_CD1
+0785+  D754 C9            RET
+0786+  D755             
+0787+  D755 21 00 00    F_OPEN: LXI H,0
+0788+  D758 22 23 DE      SHLD FBLEN
+0789+  D75B CD 76 D6    FS_OPEN:CALL FS_FNDF
+0790+  D75E D8            RC
+0791+  D75F CD C7 D6      CALL FS_GETB
+0792+  D762 21 1D DE      LXI H,BNEXT
+0793+  D765 73            MOV M,E
+0794+  D766 23            INX H
+0795+  D767 72            MOV M,D
+0796+  D768 23            INX H
+0797+  D769 71            MOV M,C
+0798+  D76A 23            INX H
+0799+  D76B 70            MOV M,B
+0800+  D76C AF            XRA A
+0801+  D76D 32 18 DE      STA BLKLEN
+0802+  D770 C9            RET
+0803+  D771             
+0804+  D771 78          F_READ: MOV A,B
+0805+  D772 B1            ORA C
+0806+  D773 C8            RZ
+0807+  D774 E5            PUSH H
+0808+  D775 2A 23 DE      LHLD FBLEN
+0809+  D778 7C            MOV A,H
+0810+  D779 B5            ORA L
+0811+  D77A CA 98 D7      JZ F_RD1
+0812+  D77D CD 48 D4      CALL SUBHB
+0813+  D780 D2 C6 D7      JNC F_RD3
+0814+  D783 D1            POP D
+0815+  D784 C5            PUSH B
+0816+  D785 2A 23 DE      LHLD FBLEN
+0817+  D788 44            MOV B,H
+0818+  D789 4D            MOV C,L
+0819+  D78A E1            POP H
+0820+  D78B CD 48 D4      CALL SUBHB
+0821+  D78E E5            PUSH H
+0822+  D78F 2A 21 DE      LHLD FBPOS
+0823+  D792 EB            XCHG
+0824+  D793 CD 52 D4      CALL COPY
+0825+  D796 C1            POP B
+0826+  D797 E5            PUSH H
+0827+  D798 78          F_RD1:  MOV A,B
+0828+  D799 FE 02         CPI 2
+0829+  D79B D2 B4 D7      JNC F_RD2
+0830+  D79E C5            PUSH B
+0831+  D79F 21 00 02      LXI H,200H
+0832+  D7A2 22 23 DE      SHLD FBLEN
+0833+  D7A5 21 00 DB      LXI H,BUFDIR
+0834+  D7A8 22 21 DE      SHLD FBPOS
+0835+  D7AB CD 4A D6      CALL FS_READ
+0836+  D7AE C1            POP B
+0837+  D7AF E1            POP H
+0838+  D7B0 D2 71 D7      JNC F_READ
+0839+  D7B3 C9            RET
+0840+  D7B4 21 00 00    F_RD2:  LXI H,0
+0841+  D7B7 22 23 DE      SHLD FBLEN
+0842+  D7BA E1            POP H
+0843+  D7BB C5            PUSH B
+0844+  D7BC CD 4A D6      CALL FS_READ
+0845+  D7BF C1            POP B
+0846+  D7C0 D8            RC
+0847+  D7C1 05            DCR B
+0848+  D7C2 05            DCR B
+0849+  D7C3 C3 71 D7      JMP F_READ
+0850+  D7C6 22 23 DE    F_RD3:  SHLD FBLEN
+0851+  D7C9 2A 21 DE      LHLD FBPOS
+0852+  D7CC EB            XCHG
+0853+  D7CD E1            POP H
+0854+  D7CE CD 52 D4      CALL COPY
+0855+  D7D1 EB            XCHG
+0856+  D7D2 22 21 DE      SHLD FBPOS
+0857+  D7D5 EB            XCHG
+0858+  D7D6 C9            RET
+0859+  D7D7             
+0860+  D7D7~            #ifdef RWR ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0861+  D7D7~            F_WRITE: MOV A,B
+0862+  D7D7~              ORA C
+0863+  D7D7~              RZ
+0864+  D7D7~              PUSH H
+0865+  D7D7~              LHLD FBLEN
+0866+  D7D7~              MOV A,H
+0867+  D7D7~              ORA L
+0868+  D7D7~              JZ F_WR1
+0869+  D7D7~              POP H
+0870+  D7D7~              RET
+0871+  D7D7~            F_WR1:  MOV A,B
+0872+  D7D7~              CPI 2
+0873+  D7D7~              JNC F_WR2
+0874+  D7D7~              LXI H,200H
+0875+  D7D7~              SHLD FBLEN
+0876+  D7D7~              POP H
+0877+  D7D7~              PUSH B
+0878+  D7D7~              CALL FS_WRITE
+0879+  D7D7~              POP B
+0880+  D7D7~              JNC F_WRITE
+0881+  D7D7~              RET
+0882+  D7D7~            F_WR2:  LXI H,0
+0883+  D7D7~              SHLD FBLEN
+0884+  D7D7~              POP H
+0885+  D7D7~              PUSH B
+0886+  D7D7~              CALL FS_WRITE
+0887+  D7D7~              POP B
+0888+  D7D7~              RC
+0889+  D7D7~              DCR B
+0890+  D7D7~              DCR B
+0891+  D7D7~              JMP F_WRITE
+0892+  D7D7             #endif ;!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0525   D7D7             
+0526   D7D7~            #ifdef UT88
+0527   D7D7~            ORG START_ADDR+0fffh
+0528   D7D7~                nop
+0529   D7D7             #endif
+0530   D7D7             
+0531   D7D7~            #ifdef APOGEE
+0532   D7D7~            ORG START_ADDR+0fffh
+0533   D7D7~                nop
+0534   D7D7             #endif
+0535   D7D7             
+0536   D7D7~            #ifdef RK86
+0537   D7D7~            ORG START_ADDR+0fffh
+0538   D7D7~                nop
+0539   D7D7             #endif
+0540   D7D7             
+0541   D7D7~            #ifdef GAL
+0542   D7D7~            ORG START_ADDR+0fffh
+0543   D7D7~                nop
+0544   D7D7             #endif
+0545   D7D7             
+0546   D7D7~            #ifdef ORION
+0547   D7D7~            ORG START_ADDR+0a7fh
+0548   D7D7~            ;ORG 0a0ffh
+0549   D7D7~            ;ORG 0b0ffh
+0550   D7D7~             nop
+0551   D7D7~            ;ORG 0bffdh
+0552   D7D7~            ; jmp 0b800h
+0553   D7D7             #endif
+0554   D7D7             ;ORG 0dbffh
+0555   D7D7             ; nop
+0556   D7D7             
+0557   D7D7               .end
+tasm: Number of errors = 0
