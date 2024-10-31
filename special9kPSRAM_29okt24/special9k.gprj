@@ -1,0 +1,45 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="" pn="">gw1nr9c-004</Device>
+    <FileList>
+        <File path="src/K580/k580vi53.v" type="file.verilog" enable="1"/>
+        <File path="src/K580/k580wm80a.v" type="file.verilog" enable="0"/>
+        <File path="src/K580/vm80a.v" type="file.verilog" enable="1"/>
+        <File path="src/clockdiv.sv" type="file.verilog" enable="1"/>
+        <File path="src/gowin_dpb/t9k_64kbdual.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_prom/t9k_rom.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_rpll/gowin_rpll.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_rpll/t9k_200m.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_rpll/t9k_hdmi.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_rpll/t9k_psram.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_sdpb/t9k_vmem.v" type="file.verilog" enable="1"/>
+        <File path="src/gowin_sp/t9k_64kb.v" type="file.verilog" enable="1"/>
+        <File path="src/hdmi/audio_clock_regeneration_packet.sv" type="file.verilog" enable="1"/>
+        <File path="src/hdmi/audio_info_frame.sv" type="file.verilog" enable="1"/>
+        <File path="src/hdmi/audio_sample_packet.sv" type="file.verilog" enable="1"/>
+        <File path="src/hdmi/auxiliary_video_information_info_frame.sv" type="file.verilog" enable="1"/>
+        <File path="src/hdmi/hdmi.sv" type="file.verilog" enable="1"/>
+        <File path="src/hdmi/packet_assembler.sv" type="file.verilog" enable="1"/>
+        <File path="src/hdmi/packet_picker.sv" type="file.verilog" enable="1"/>
+        <File path="src/hdmi/serializer.sv" type="file.verilog" enable="1"/>
+        <File path="src/hdmi/source_product_description_info_frame.sv" type="file.verilog" enable="1"/>
+        <File path="src/hdmi/tmds_channel.sv" type="file.verilog" enable="1"/>
+        <File path="src/keyboard.v" type="file.verilog" enable="0"/>
+        <File path="src/ps2_kbd.v" type="file.verilog" enable="1"/>
+        <File path="src/ps2_keyboard.v" type="file.verilog" enable="1"/>
+        <File path="src/psram_cnt.v" type="file.verilog" enable="1"/>
+        <File path="src/psram_controller.v" type="file.verilog" enable="0"/>
+        <File path="src/psram_memory_interface_hs/psram_memory_interface_hs.v" type="file.verilog" enable="1"/>
+        <File path="src/top_level.v" type="file.verilog" enable="1"/>
+        <File path="src/ukp/ukp.v" type="file.verilog" enable="0"/>
+        <File path="src/ukp/ukprom.v" type="file.verilog" enable="0"/>
+        <File path="src/usd_card.v" type="file.verilog" enable="1"/>
+        <File path="src/special9k.cst" type="file.cst" enable="1"/>
+        <File path="src/special9k.sdc" type="file.sdc" enable="1"/>
+        <File path="src/ukp/asukp" type="file.other" enable="1"/>
+        <File path="src/ukp/ukp.s" type="file.other" enable="1"/>
+    </FileList>
+</Project>

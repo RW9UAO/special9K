@@ -1,0 +1,17 @@
+[General]
+ipc_version=4
+file=t9k_64kb
+module=t9k_64kb
+target_device=gw1nr9c-004
+type=ram_sp
+version=3.0
+
+[Config]
+BYTE_SIZE=0
+DEPTH=51200
+LANG=0
+MEM_FILE=D:/home/gowin/special/src/rom/test_rom.mi
+READ=0
+RESET_MODE=true
+WIDTH=8
+WRITE=0
